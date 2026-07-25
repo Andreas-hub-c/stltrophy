@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <center><title>Advanced GPX to 3D Trophy</title></center>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border-color: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        /* Layout waarbij de zijbalken en het centrale blok altijd doorlopen tot beneden */
+        .page-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1450px;
+            width: 100%;
+            justify-content: center;
+            align-items: stretch;
+        }
+        .ad-sidebar {
+            flex: 1;
+            max-width: 280px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        @media (max-width: 1200px) {
+            .ad-sidebar {
+                display: none;
+            }
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h1 {
+            margin-top: 0;
+            color: var(--accent-color);
+            font-size: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .section-title {
+            font-size: 16px;
+            color: var(--accent-color);
+            margin-top: 25px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid var(--accent-color);
+            padding-left: 8px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #cbd5e1;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        .file-input-wrapper {
+            background: #0f172a;
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .file-input-wrapper:hover {
+            border-color: var(--accent-color);
+        }
+        button {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: var(--accent-hover);
+        }
+        .help-text {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <!-- Linker Advertentie Container -->
+        <div class="ad-sidebar">
+            <span>[ Linker Advertentie / Grote Skyscraper ]</span>
+        </div>
+
+        <!-- Hoofdgenerator Container -->
+        <div class="container">
+            <div>
+                <center><h1>GPX to 3D Trophy</h1></center>
+                <form action="/generate_preview" method="POST" enctype="multipart/form-data">
+                    
+                    <div class="form-group">
+                        <label>Selecteer GPX-bestand:</label>
+                        <div class="file-input-wrapper" onclick="document.getElementById('gpx_file').click()">
+                            <input type="file" id="gpx_file" name="gpx_file" accept=".gpx" required style="display:none;" onchange="updateFileName(this)">
+                            <span id="file-label">Klik hier of sleep je GPX-bestand naartoe</span>
+                        </div>
+                    </div>
+
+                    <div class="section-title">1. Terrein & Resolutie</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Grid Resolutie (Detail bergen):</label>
+                            <input type="number" name="resolutie" value="150" min="50" max="300">
+                            <div class="help-text">Hoog = meer detail, trager (bijv. 150)</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Terrein Smoothness (Berg-uiterlijk):</label>
+                            <input type="number" step="0.1" name="terrain_smooth" value="0.8">
+                            <div class="help-text">Hoe gladder de bergen worden (sigma)</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">2. Schaal & Afmetingen</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Z-Schaal (Hoogte-overdrijving):</label>
+                            <input type="number" step="0.1" name="z_schaal" value="2.0">
+                            <div class="help-text">1.0 is werkelijk, 2.0 of 3.0 toont mooier</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Model Grootte (Lengte in mm):</label>
+                            <input type="number" name="grootte" value="100.0">
+                            <div class="help-text">Fysieke lengte van je 3D-print</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bodem Dikte (Sokkel in mm):</label>
+                            <input type="number" name="bodem" value="5.0">
+                            <div class="help-text">Dikte onder het laagste dal</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Marge rondom (Graden):</label>
+                            <input type="number" step="0.005" name="marge" value="0.01">
+                            <div class="help-text">Ruimte rondom de route (0.01 ≈ 1km)</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">3. Route Instellingen</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Route Breedte (mm):</label>
+                            <input type="number" step="0.1" name="breedte" value="2.0">
+                            <div class="help-text">Hoe breed het opstaande pad is</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Route Dikte / Hoogte (mm):</label>
+                            <input type="number" step="0.1" name="dikte" value="1.0">
+                            <div class="help-text">Hoe ver het pad uitsteekt op de berg</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Route Hoogte Smoothness (Z-as):</label>
+                            <input type="number" step="0.5" name="route_z_smooth" value="3.0">
+                            <div class="help-text">Voorkomt 'trappetjes' in het pad</div>
+                        </div>
+                    </div>
+
+                    <button type="submit">Genereer preview</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Rechter Advertentie Container -->
+        <div class="ad-sidebar">
+            <span>[ Rechter Advertentie / Grote Skyscraper ]</span>
+        </div>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('file-label').innerText = "Geselecteerd: " + input.files[0].name;
+            }
+        }
+    </script>
+</body>
+</html>

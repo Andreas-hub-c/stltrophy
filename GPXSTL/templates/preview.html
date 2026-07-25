@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jouw Unieke 3D Berg-Trofee Preview</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border-color: #334155;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        /* Layout met linker- en rechteradvertentieblokken die tot beneden doorlopen */
+        .page-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1450px;
+            width: 100%;
+            justify-content: center;
+            align-items: stretch;
+        }
+        .ad-sidebar {
+            flex: 1;
+            max-width: 280px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        @media (max-width: 1200px) {
+            .ad-sidebar {
+                display: none;
+            }
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 950px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            box-sizing: border-box;
+            align-content: space-between;
+        }
+        @media (max-width: 768px) {
+            .wrapper { grid-template-columns: 1fr; }
+        }
+        .viewer-container {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: #090d16;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Fullscreen state */
+        .viewer-container:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            border: none;
+        }
+
+        #viewer { 
+            width: 100%; 
+            height: 100%;
+            flex-grow: 1; 
+            position: relative; 
+        }
+
+        #viewer canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ef4444;
+            font-weight: bold;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ef4444;
+            display: none;
+            z-index: 20;
+        }
+
+        .viewer-toolbar {
+            display: flex;
+            background: #0f172a;
+            border-top: 1px solid var(--border-color);
+            padding: 8px;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            flex-wrap: wrap;
+        }
+        .tool-btn {
+            background: #1e293b;
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .tool-btn:hover { background: #334155; color: #fff; }
+
+        /* Styling voor de kleurkiezer in de toolbar */
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        .color-picker-wrapper input[type="color"] {
+            border: none;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .fullscreen-btn:hover { background: #334155; color: #fff; }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h2 { color: var(--accent-color); margin-top: 0; font-size: 22px; }
+        p { color: #cbd5e1; font-size: 14px; line-height: 1.5; }
+        
+        .usp-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .usp-list li {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .usp-list li::before {
+            content: "✓";
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .btn-download {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+        .btn-download:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-back {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #475569;
+            font-size: 13px;
+            padding: 10px;
+        }
+        .btn-back:hover { background: #334155; color: white; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <!-- Linker Advertentie Container -->
+        <div class="ad-sidebar">
+            <span>[ Linker Advertentie / Grote Skyscraper ]</span>
+        </div>
+
+        <!-- Hoofd Preview Wrapper -->
+        <div class="wrapper">
+            <div>
+                <div class="viewer-container" id="viewer-container">
+                    <button class="fullscreen-btn" onclick="toggleFullScreen()">⛶ Volledig Scherm</button>
+                    <div id="viewer">
+                        <div id="error-box" class="error-message">Kan 3D model niet laden.<br><span id="error-text" style="font-size:12px; color:#94a3b8;"></span></div>
+                    </div>
+                    
+                    <div class="viewer-toolbar">
+                        <button class="tool-btn" id="rotate-toggle-btn" onclick="toggleAutoRotate()">⏸ Pauzeer</button>
+                        <button class="tool-btn" onclick="zoomIn()">➕ Zoom</button>
+                        <button class="tool-btn" onclick="zoomOut()">➖ Uit</button>
+                        <button class="tool-btn" onclick="resetCamera()">🎯 Reset</button>
+                        
+                        <!-- Nieuwe Kleur Kiezer Knop in Toolbar -->
+                        <div class="color-picker-wrapper">
+                            <span>Kleur:</span>
+                            <input type="color" id="model-color-picker" value="#64748b" onchange="changeModelColor(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div>
+                    <h2>Jouw GPX als Meesterwerk</h2>
+                    <p>Bekijk hierbovend de interactieve 3D-weergave van jouw berglandschap en route.</p>
+
+                    <ul class="usp-list">
+                        <li>Optimale schaduw & contrast</li>
+                        <li>Geschikt voor PLA & Resin printers</li>
+                        <li>Inclusief opstijgend GPX-pad</li>
+                        <li>100% Gratis te downloaden</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <a href="/download-file/preview_model.stl" class="btn btn-download">Download Gratis STL</a>
+                    <a href="/" class="btn btn-back">← Terug naar Instellingen</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechter Advertentie Container -->
+        <div class="ad-sidebar">
+            <span>[ Rechter Advertentie / Grote Skyscraper ]</span>
+        </div>
+    </div>
+
+    <!-- Three.js Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        const container = document.getElementById('viewer');
+        const containerWrapper = document.getElementById('viewer-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x090d16);
+
+        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight1.position.set(100, 200, 150);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.3);
+        dirLight2.position.set(-100, -100, -50);
+        scene.add(dirLight2);
+
+        let modelMesh = null;
+        let isAutoRotating = true;
+        let isUserInteracting = false;
+        let defaultCameraPosition = new THREE.Vector3();
+        let maxDim = 100;
+
+        controls.onStart = () => { isUserInteracting = true; };
+        controls.onEnd = () => { setTimeout(() => { isUserInteracting = false; }, 4000); };
+
+        const loader = new THREE.STLLoader();
+        loader.load(
+            '/download-file/preview_model.stl', 
+            function (geometry) {
+                // Standaard startkleur gekoppeld aan de kleurkiezer `#64748b`
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0x64748b,      
+                    roughness: 0.5,       
+                    metalness: 0.1,
+                    polygonOffset: true,  
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
+                });
+                
+                modelMesh = new THREE.Mesh(geometry, material);
+                
+                geometry.computeBoundingBox();
+                const center = new THREE.Vector3();
+                geometry.boundingBox.getCenter(center);
+                
+                geometry.center();
+                controls.target.set(0, 0, 0);
+
+                const size = new THREE.Vector3();
+                geometry.boundingBox.getSize(size);
+                maxDim = Math.max(size.x, size.y, size.z);
+                
+                defaultCameraPosition.set(0, -maxDim * 1.8, maxDim * 1.4);
+                camera.position.copy(defaultCameraPosition);
+                controls.update();
+
+                scene.add(modelMesh);
+            },
+            undefined,
+            function (error) {
+                console.error('Fout bij laden STL:', error);
+                document.getElementById('error-box').style.display = 'block';
+                document.getElementById('error-text').innerText = 'Controleer of het preview-bestand bestaat.';
+            }
+        );
+
+        function toggleAutoRotate() {
+            isAutoRotating = !isAutoRotating;
+            document.getElementById('rotate-toggle-btn').innerText = isAutoRotating ? "⏸ Pauzeer" : "▶ Start";
+        }
+
+        function zoomIn() { camera.position.multiplyScalar(0.85); }
+        function zoomOut() { camera.position.multiplyScalar(1.15); }
+        function resetCamera() {
+            camera.position.copy(defaultCameraPosition);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        // Functie die wordt aangeroepen zodra de gebruiker een kleur kiest
+        function changeModelColor(hexColor) {
+            if (modelMesh) {
+                modelMesh.material.color.set(hexColor);
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                containerWrapper.requestFullscreen().catch(err => {
+                    alert(`Fout bij openen fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function resizeRenderer() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            if (width > 0 && height > 0) {
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            }
+        }
+
+        window.addEventListener('resize', resizeRenderer);
+        document.addEventListener('fullscreenchange', () => {
+            resizeRenderer();
+            setTimeout(resizeRenderer, 50);
+            setTimeout(resizeRenderer, 150);
+            setTimeout(resizeRenderer, 300);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (modelMesh && isAutoRotating && !isUserInteracting) {
+                modelMesh.rotation.z += 0.003;
+            }
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
