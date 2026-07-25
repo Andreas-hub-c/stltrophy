@@ -4,3 +4,4 @@ numpy==1.26.4
 numpy-stl==3.1.1
 srtm.py==0.3.7
 scipy==1.11.4
+gunicorn==21.2.0
