@@ -1,6 +1,7 @@
 import argparse
 import math
 import gpxpy
+import srtm
 import numpy as np
 from scipy.interpolate import splev, splprep
 from scipy.ndimage import gaussian_filter, gaussian_filter1d, map_coordinates, uniform_filter
