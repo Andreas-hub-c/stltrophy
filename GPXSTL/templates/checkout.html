@@ -2,24 +2,217 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Afrekenen Trofee</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afrekenen - 3D GPX Trofee</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; text-align: center; padding: 50px; }
-        .card { max-width: 500px; margin: auto; background: #1e293b; padding: 40px; border-radius: 12px; border: 1px solid #334155; }
-        .price { font-size: 28px; color: #38bdf8; font-weight: bold; margin: 20px 0; }
-        .pay-btn { background: #22c55e; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .pay-btn:hover { background: #16a34a; }
+        /* Verberg standaard radio buttons, we stijlen de labels */
+        input[type="radio"]:checked + div {
+            border-color: #4F46E5;
+            background-color: #EEF2FF;
+        }
+        input[type="radio"]:checked + div .radio-dot {
+            background-color: #4F46E5;
+            border-color: #4F46E5;
+        }
     </style>
 </head>
-<body>
-    <div class="card">
-        <h2>Ontgrendel High-Res STL</h2>
-        <p>Je bent een stap verwijderd van jouw unieke 3D-printbare berglandschap.</p>
-        <div class="price">€ 9,99</div>
-        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 30px;">Inclusief onbeperkt printrecht & hoogste detail (Resolutie 150+)</p>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 border-b border-gray-200">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-indigo-600">Veilig Afrekenen</h1>
+            <div class="text-sm font-medium text-gray-500 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+                Stap 3 van 3
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto p-6 md:p-12 lg:flex lg:gap-12">
         
-        <!-- Hier komt straks jouw Stripe of Mollie betaalknop -->
-        <button class="pay-btn" onclick="alert('Hier koppel je straks de Stripe/Mollie betaallink!')">Nu Veilig Afrekenen</button>
-    </div>
+        <!-- Linkerkolom: Formulier (Neemt meer ruimte in) -->
+        <div class="lg:w-2/3 space-y-8">
+            
+            <form id="checkoutForm">
+                <!-- 1. Contact & Factuurgegevens -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 mb-8">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-900">1. Jouw Gegevens</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres (voor de downloadlink)</label>
+                            <input type="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="naam@voorbeeld.nl">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Jan">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Jansen">
+                        </div>
+                        
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Land</label>
+                            <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white">
+                                <option>Nederland</option>
+                                <option>België</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Betaalmethode -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-900">2. Kies een betaalmethode</h2>
+                    
+                    <div class="space-y-4">
+                        <!-- iDEAL -->
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="payment" value="ideal" class="peer sr-only" checked onchange="toggleIdealBank(true)">
+                            <div class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl transition duration-200 hover:border-indigo-300">
+                                <div class="flex items-center gap-3">
+                                    <div class="radio-dot w-5 h-5 rounded-full border-2 border-gray-300 flex flex-shrink-0 justify-center items-center mr-2"></div>
+                                    <span class="font-semibold text-gray-800">iDEAL</span>
+                                </div>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/IDEAL_Logo.png" alt="iDEAL" class="h-6 object-contain">
+                            </div>
+                        </label>
+
+                        <!-- iDEAL Bank Selectie (verborgen bij andere methodes) -->
+                        <div id="idealBankSelect" class="pl-10 pr-4 pb-4 animate-fade-in-down">
+                            <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white text-sm">
+                                <option value="" disabled selected>Kies je bank...</option>
+                                <option>ABN AMRO</option>
+                                <option>ING</option>
+                                <option>Rabobank</option>
+                                <option>SNS Bank</option>
+                                <option>Bunq</option>
+                                <option>ASN Bank</option>
+                                <option>Knab</option>
+                            </select>
+                        </div>
+
+                        <!-- Creditcard -->
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="payment" value="creditcard" class="peer sr-only" onchange="toggleIdealBank(false)">
+                            <div class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl transition duration-200 hover:border-indigo-300">
+                                <div class="flex items-center gap-3">
+                                    <div class="radio-dot w-5 h-5 rounded-full border-2 border-gray-300 flex flex-shrink-0 justify-center items-center mr-2"></div>
+                                    <span class="font-semibold text-gray-800">Creditcard</span>
+                                </div>
+                                <div class="flex gap-1">
+                                    <!-- Placeholder icons voor creditcards -->
+                                    <svg class="h-6 w-8 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Bancontact -->
+                        <label class="cursor-pointer block relative">
+                            <input type="radio" name="payment" value="bancontact" class="peer sr-only" onchange="toggleIdealBank(false)">
+                            <div class="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl transition duration-200 hover:border-indigo-300">
+                                <div class="flex items-center gap-3">
+                                    <div class="radio-dot w-5 h-5 rounded-full border-2 border-gray-300 flex flex-shrink-0 justify-center items-center mr-2"></div>
+                                    <span class="font-semibold text-gray-800">Bancontact</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Rechterkolom: Besteloverzicht (Sticky, scrolt mee) -->
+        <div class="lg:w-1/3 mt-8 lg:mt-0">
+            <div class="bg-gray-100 p-8 rounded-2xl border border-gray-200 sticky top-8">
+                <h3 class="text-xl font-semibold mb-6 text-gray-900">Overzicht Bestelling</h3>
+                
+                <!-- Product item -->
+                <div class="flex justify-between items-start border-b border-gray-300 pb-4 mb-4">
+                    <div>
+                        <h4 class="font-bold text-gray-800">3D GPX Trofee</h4>
+                        <p class="text-sm text-gray-500">Klaar-om-te-printen .3MF Bestand</p>
+                        <p class="text-xs text-indigo-600 mt-1 font-medium">Directe download na betaling</p>
+                    </div>
+                    <span class="font-semibold text-gray-800">€ 24,95</span>
+                </div>
+
+                <!-- Totalen -->
+                <div class="space-y-2 text-sm text-gray-600 border-b border-gray-300 pb-4 mb-6">
+                    <div class="flex justify-between">
+                        <span>Subtotaal</span>
+                        <span>€ 20,62</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>BTW (21%)</span>
+                        <span>€ 4,33</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mb-8">
+                    <span class="font-bold text-lg text-gray-900">Totaal te betalen</span>
+                    <span class="font-bold text-2xl text-gray-900">€ 24,95</span>
+                </div>
+
+                <!-- Betaalknop -->
+                <button form="checkoutForm" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition duration-200 flex justify-center items-center gap-2 text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Veilig Betalen
+                </button>
+
+                <p class="text-center text-xs text-gray-500 mt-4 flex items-center justify-center gap-1">
+                    <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                    Je verbinding is versleuteld en veilig.
+                </p>
+
+                <!-- Terug link -->
+                <div class="mt-6 text-center">
+                    <a href="preview.html" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">
+                        &larr; Terug naar preview
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Simpel script voor UI logica -->
+    <script>
+        // Verberg/Toon de iDEAL bank-keuzelijst
+        function toggleIdealBank(show) {
+            const idealSelect = document.getElementById('idealBankSelect');
+            if(show) {
+                idealSelect.style.display = 'block';
+            } else {
+                idealSelect.style.display = 'none';
+            }
+        }
+
+        // Simuleer het afrekenproces
+        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Verander knop status
+            const btn = document.querySelector('button[type="submit"]');
+            btn.innerHTML = 'Bezig met verwerken... <svg class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            btn.disabled = true;
+            btn.classList.replace('bg-green-600', 'bg-green-800');
+
+            // In een echte applicatie stuur je de gebruiker hier door naar Mollie, Stripe, etc.
+            setTimeout(() => {
+                alert("Betaling succesvol! In een echte web-app wordt hier de .3mf file gedownload.");
+                // window.location.href = 'download_success.html';
+                btn.innerHTML = 'Betaald!';
+            }, 1500);
+        });
+    </script>
 </body>
 </html>
