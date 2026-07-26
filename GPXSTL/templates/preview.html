@@ -152,6 +152,27 @@
                 try {
                     const object = loader.parse(arrayBuffer);
                     
+                    // Materialen toewijzen op basis van de objectnamen uit Python
+                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 }); // Zwarte boord
+                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.9 }); // Groen traject
+                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3 });   // Blauw water
+                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });   // Rode route
+
+                    object.traverse(function (child) {
+                        if (child.isMesh) {
+                            const name = child.name ? child.name.toLowerCase() : "";
+                            if (name.includes('sokkel')) {
+                                child.material = matSokkel;
+                            } else if (name.includes('terrein')) {
+                                child.material = matTerrein;
+                            } else if (name.includes('water')) {
+                                child.material = matWater;
+                            } else if (name.includes('route')) {
+                                child.material = matRoute;
+                            }
+                        }
+                    });
+
                     const box = new THREE.Box3().setFromObject(object);
                     const center = box.getCenter(new THREE.Vector3());
                     object.position.sub(center);
