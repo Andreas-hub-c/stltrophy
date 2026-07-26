@@ -56,7 +56,9 @@ def api_generate():
             z_schaal=float(request.form.get('zschaal', 2.0)),
             model_grootte=float(request.form.get('grootte', 100.0)),
             boord_marge=float(request.form.get('boordmarge', 10.0)),
-            boord_dikte=float(request.form.get('boorddikte', 5.0))
+            boord_dikte=float(request.form.get('boorddikte', 5.0)),
+            water_diepte=float(request.form.get('water_diepte', 0.6)),             # <-- Toegevoegd
+            min_water_grootte=int(request.form.get('min_water_grootte', 150))    # <-- Toegevoegd
         )
     except ValueError as e:
         # Als iemand vreemde tekst invult in plaats van getallen, vangen we dat netjes op
