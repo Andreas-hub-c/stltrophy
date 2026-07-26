@@ -9,6 +9,9 @@
     <!-- ES-module shims (voor oudere browsers) -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     
+    <!-- localForage om de 5MB opslaglimiet te omzeilen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
     <!-- DIT IS DE IMPORT MAP (Cruciaal voor het laden van Three.js en fflate) -->
     <script type="importmap">
       {
@@ -41,7 +44,7 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <p class="text-lg font-medium tracking-wide">Jouw model wordt gegenereerd...</p>
-                <p class="text-sm text-gray-400 mt-2">Dit kan even duren afhankelijk van de lengte van je route.</p>
+                <p class="text-sm text-gray-400 mt-2" id="loading-status-text">Dit kan even duren afhankelijk van de lengte van je route.</p>
             </div>
 
             <!-- Viewer Controls overlay -->
@@ -90,6 +93,7 @@
 
         const container = document.getElementById('viewer-container');
         const loadingOverlay = document.getElementById('loading-overlay');
+        const statusText = document.getElementById('loading-status-text');
         
         // 1. Scene Setup
         const scene = new THREE.Scene();
@@ -131,11 +135,15 @@
         // 3. Ophalen en Renderen
         async function fetchAndRender3MF() {
             try {
-                const gpxString = sessionStorage.getItem('gpxData');
+                // Haal de GPX string nu uit localForage in plaats van sessionStorage
+                statusText.innerText = "GPX data ophalen...";
+                const gpxString = await localforage.getItem('gpxData');
+                
                 if (!gpxString) {
-                    throw new Error("Geen GPX bestand gevonden in het geheugen. Ga terug naar de startpagina en upload opnieuw.");
+                    throw new Error("Geen GPX bestand gevonden. Ga terug naar de startpagina en upload opnieuw.");
                 }
 
+                statusText.innerText = "Model wordt gegenereerd op de server...";
                 const formData = new FormData();
                 const gpxBlob = new Blob([gpxString], { type: 'application/gpx+xml' });
                 formData.append('gpxFile', gpxBlob, 'route.gpx');
@@ -157,9 +165,9 @@
                     throw new Error(errData.error || `Server gaf foutcode ${response.status} terug.`);
                 }
 
+                statusText.innerText = "3MF bestand inladen...";
                 const arrayBuffer = await response.arrayBuffer();
 
-                // 3MFLoader heeft fflate (de zip library) nodig, deze staat nu correct in je <head>!
                 const loader = new ThreeMFLoader();
                 loader.parse(arrayBuffer, function ( object ) {
                     // Zet model mooi in het midden
@@ -167,18 +175,17 @@
                     const center = box.getCenter(new THREE.Vector3());
                     object.position.sub(center);
                     
-                    // Vaak komen 3MF's gekanteld binnen in Three.js, dit legt hem plat:
+                    // 3MF's plat leggen
                     object.rotation.x = -Math.PI / 2;
 
                     scene.add( object );
-                    
                     loadingOverlay.classList.add('hidden');
                 });
 
             } catch (error) {
                 console.error("Fout bij laden:", error);
                 loadingOverlay.innerHTML = `
-                    <div class="bg-gray-800 p-6 rounded-lg border border-red-500 max-w-sm text-center shadow-lg">
+                    <div class="bg-gray-800 p-6 rounded-lg border border-red-500 max-w-sm text-center shadow-lg pointer-events-auto">
                         <p class="text-red-400 font-bold text-lg mb-2">Er ging iets mis</p>
                         <p class="text-sm text-gray-300 mb-6">${error.message}</p>
                         <button onclick="window.location.href='index.html'" class="bg-white text-gray-900 px-4 py-2 font-bold rounded hover:bg-gray-200">Terug naar begin</button>
