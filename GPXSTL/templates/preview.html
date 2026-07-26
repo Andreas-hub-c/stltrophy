@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview 3D Model - Route Trofee</title>
+    <title>3D Preview - Route Trofee</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- LocalForage voor grote bestanden uit IndexedDB te halen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    
-    <!-- Three.js Import Map (zorgt ervoor dat Three.js via moderne modules werkt) -->
     <script type="importmap">
         {
             "imports": {
@@ -18,81 +14,94 @@
             }
         }
     </script>
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white h-screen w-screen overflow-hidden m-0 flex flex-col relative">
+<body class="bg-[#121212] text-white h-screen w-screen overflow-hidden m-0 flex flex-col relative font-sans">
     
-    <!-- Header: Knoppen laag over het canvas heen -->
-    <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none">
-        <button onclick="window.location.href='index.html'" class="pointer-events-auto bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-colors">
-            &larr; Terug
-        </button>
-        <a id="downloadBtn" href="#" class="hidden pointer-events-auto bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">
-            Download 3MF Bestand &darr;
-        </a>
-    </div>
+    <div class="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+        <!-- Top Bar -->
+        <div class="flex justify-between items-start">
+            <button onclick="window.location.href='index.html'" class="pointer-events-auto glass-panel hover:bg-white/10 text-white text-sm font-medium py-2.5 px-5 rounded-full shadow-lg transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Terug naar instellingen
+            </button>
+        </div>
 
-    <!-- 3D Canvas Container -->
-    <div id="canvas-container" class="w-full h-full"></div>
-
-    <!-- Loading / Status Overlay (Schermvullend) -->
-    <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-gray-900/95 z-20 backdrop-blur-sm">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-md border border-gray-700">
-            <div class="animate-spin inline-block w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full mb-6"></div>
-            <h2 class="text-2xl font-bold mb-3 text-white">3D Model Genereren</h2>
-            <p id="statusText" class="text-gray-300 text-lg">GPX data inladen...</p>
+        <!-- Bottom Bar -->
+        <div class="flex justify-center md:justify-end items-end pb-4">
+            <a id="checkoutBtn" href="checkout.html" class="hidden pointer-events-auto bg-green-600 hover:bg-green-500 text-white font-semibold py-3 px-8 rounded-full shadow-[0_0_20px_rgba(22,163,74,0.4)] transition-all transform hover:scale-105 flex items-center gap-3 tracking-wide">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Ga naar Afrekenen
+            </a>
         </div>
     </div>
 
-    <!-- Three.js Script -->
+    <!-- 3D Canvas -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full"></div>
+
+    <!-- Professioneel Laadscherm -->
+    <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center bg-[#121212] z-20 transition-opacity duration-700">
+        <div class="glass-panel p-10 rounded-3xl shadow-2xl text-center max-w-sm flex flex-col items-center">
+            <div class="relative w-16 h-16 mb-6">
+                <div class="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+                <div class="absolute inset-2 rounded-full border-r-2 border-teal-400 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            </div>
+            <h2 class="text-xl font-semibold mb-2 text-white tracking-wide">Model Genereren</h2>
+            <p id="statusText" class="text-gray-400 text-sm">Dit kan 1 tot 3 minuten duren...</p>
+        </div>
+    </div>
+
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
 
-        // --- 1. Three.js Basis Setup ---
+        // --- 1. Professionele Three.js Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a2e); // Donkerblauwe/hi-tech achtergrond
-        
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
-        camera.position.set(0, 200, 200);
+        scene.fog = new THREE.FogExp2(0x121212, 0.002);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.type = THREE.VSMShadowMap; 
         container.appendChild(renderer.domElement);
 
-        // Besturing (muis / touch)
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Voorkom dat je te ver onder het model kijkt
+        controls.dampingFactor = 0.04;
+        controls.maxPolarAngle = Math.PI / 2;
 
-        // Belichting voor een mooie "3D-print" uitstraling
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.position.set(100, 200, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.bias = -0.001;
-        scene.add(dirLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        mainLight.position.set(100, 200, 100);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.bias = -0.001;
+        scene.add(mainLight);
 
-        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
-        dirLight2.position.set(-100, 50, -50);
-        scene.add(dirLight2);
+        const fillLight = new THREE.DirectionalLight(0x90b0d0, 0.4);
+        fillLight.position.set(-100, 50, -100);
+        scene.add(fillLight);
 
-        // Schermgrootte aanpassen bij venster wijziging
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Animatie loop
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -103,158 +112,93 @@
         // --- 2. Data ophalen en 3MF inladen ---
         const statusText = document.getElementById('statusText');
         const loadingOverlay = document.getElementById('loadingOverlay');
-        const downloadBtn = document.getElementById('downloadBtn');
+        const checkoutBtn = document.getElementById('checkoutBtn');
 
         async function fetchAndRender3MF() {
             try {
-                statusText.innerText = "GPX data controleren...";
                 const gpxString = await localforage.getItem('gpxData');
-                
-                if (!gpxString) {
-                    throw new Error("Geen GPX bestand gevonden. Ga terug naar de startpagina en upload opnieuw.");
-                }
+                if (!gpxString) throw new Error("Geen GPX data. Ga terug naar de startpagina.");
 
-                statusText.innerText = "Model genereren op server...\n(Dit duurt 1 tot 3 minuten)";
+                statusText.innerText = "Bezig met bouwen van 3D model...";
                 
                 const formData = new FormData();
-                const gpxBlob = new Blob([gpxString], { type: 'application/gpx+xml' });
-                formData.append('gpxFile', gpxBlob, 'route.gpx');
+                formData.append('gpxFile', new Blob([gpxString], { type: 'application/gpx+xml' }), 'route.gpx');
 
-                // Haal alle instellingen uit de sliders op
                 const params = ['resolutie', 'marge', 'breedte', 'dikte', 'zschaal', 'grootte', 'boordmarge', 'boorddikte'];
                 params.forEach(param => {
                     const val = sessionStorage.getItem(param);
                     if (val) formData.append(param, val);
                 });
 
-                // Aanvraag naar de backend sturen
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/generate', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error("Server kon het bestand niet genereren.");
 
-                if (!response.ok) {
-                    throw new Error(`De server gaf een foutmelding: Code ${response.status}. Mogelijks was het bestand te zwaar.`);
-                }
-
-                statusText.innerText = "Bestand ontvangen! 3D model opbouwen (dit kan heel even bevriezen)...";
-                console.log("Start met downloaden van 3MF...");
+                statusText.innerText = "Bestand klaar! Inladen voor preview...";
                 
-                // We halen de data eerst als "Blob" op, zodat we een downloadlink kunnen maken
                 const blob = await response.blob();
-                const arrayBuffer = await blob.arrayBuffer();
                 
-                // De onzichtbare download URL maken voor de knop
-                const fileUrl = URL.createObjectURL(blob);
-                downloadBtn.href = fileUrl;
-                downloadBtn.download = "Mijn_Route_Trofee.3mf";
-                
-                console.log("Bestandsgrootte:", (arrayBuffer.byteLength / 1024 / 1024).toFixed(2), "MB");
+                // BELANGRIJK: Sla het uiteindelijke 3MF bestand op in de browser voor de kassa!
+                await localforage.setItem('final_3mf_file', blob);
 
-                // --- 3. Het Model uitpakken met Three.js ---
+                const arrayBuffer = await blob.arrayBuffer();
                 const loader = new ThreeMFLoader();
                 
                 try {
-                    console.log("Parsen van 3MF...");
                     const object = loader.parse(arrayBuffer);
-                    console.log("Parsen gelukt! Kleuren toewijzen...");
 
-                    // Materialen met een mooie render-look
-                    const materialSokkel = new THREE.MeshStandardMaterial({ 
-                        color: 0x1a1a1a, // Matzwart
-                        roughness: 0.8,
-                        metalness: 0.1
-                    });
-                    
-                    const materialTerrein = new THREE.MeshStandardMaterial({ 
-                        color: 0x4ade80, // Groen
-                        roughness: 1.0,
-                        metalness: 0.0
-                    });
-
-                    const materialWater = new THREE.MeshStandardMaterial({ 
-                        color: 0x3b82f6, // Helder blauw
-                        roughness: 0.2, // Glimmend
-                        metalness: 0.1
-                    });
-
-                    const materialRoute = new THREE.MeshStandardMaterial({ 
-                        color: 0xef4444, // Knalrood
-                        roughness: 0.4,
-                        metalness: 0.2
-                    });
-
-                    // Loop door de onderdelen en geef kleuren op basis van de naam die we in Python gaven
                     object.traverse(function (child) {
                         if (child.isMesh) {
                             child.castShadow = true;
                             child.receiveShadow = true;
-                            // Reset eventuele vertex kleuren die 3MF standaard meelevert
-                            child.material.vertexColors = false; 
-
-                            const name = child.name ? child.name.toLowerCase() : "";
-                            
-                            if (name.includes('sokkel')) {
-                                child.material = materialSokkel;
-                            } else if (name.includes('terrein')) {
-                                child.material = materialTerrein;
-                            } else if (name.includes('water')) {
-                                child.material = materialWater;
-                            } else if (name.includes('route')) {
-                                child.material = materialRoute;
-                            } else {
-                                child.material.vertexColors = true; // Fallback
+                            let oldMat = child.material;
+                            let newMat = new THREE.MeshStandardMaterial({
+                                color: oldMat.color || 0xffffff,
+                                roughness: 0.65,
+                                metalness: 0.05,
+                                side: THREE.DoubleSide
+                            });
+                            if (oldMat.vertexColors || (child.geometry && child.geometry.hasAttribute('color'))) {
+                                newMat.vertexColors = true;
                             }
+                            child.material = newMat;
                         }
                     });
                     
-                    // Bereken het middenpunt van de trofee en centreer deze
                     const box = new THREE.Box3().setFromObject(object);
                     const center = box.getCenter(new THREE.Vector3());
-                    object.position.sub(center); // Schuif alles naar (0,0,0)
-                    
-                    // Rotatie fix (3MF is vaak 90 graden gedraaid op het web)
+                    object.position.sub(center); 
                     object.rotation.x = -Math.PI / 2;
 
                     scene.add(object);
                     
-                    // Camera automatisch uitzoomen zodat het hele model perfect in beeld past
                     const size = box.getSize(new THREE.Vector3()).length();
-                    camera.position.set(0, size * 0.8, size * 0.8);
+                    camera.position.set(0, size * 0.8, size * 1.0);
                     controls.target.set(0, 0, 0);
-                    controls.maxDistance = size * 3; // Limiteer hoe ver je kunt uitzoomen
+                    controls.maxDistance = size * 2.5;
                     controls.update();
 
-                    // Model is succesvol geladen -> Verberg het laadscherm en toon de Download-knop
-                    loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => loadingOverlay.remove(), 500); // Netjes weghalen
-                    downloadBtn.classList.remove('hidden');
+                    loadingOverlay.style.opacity = "0";
+                    setTimeout(() => loadingOverlay.remove(), 700);
+                    
+                    // Toon de Checkout knop
+                    checkoutBtn.classList.remove('hidden');
                     
                 } catch (parseError) {
-                    console.error("Fout tijdens het uitpakken in Three.js:", parseError);
-                    // Mocht de browser vastlopen op te veel driehoekjes, bied dan op z'n minst de download aan
-                    throw new Error("Het bestand is te gedetailleerd voor een browser-preview, maar je kunt het wel direct downloaden voor je slicer!");
+                    console.error(parseError);
+                    throw new Error("Het bestand is te zwaar voor de preview, maar je kunt het wel afrekenen en downloaden.");
                 }
 
             } catch (error) {
-                console.error("Proces Fout:", error);
                 loadingOverlay.innerHTML = `
-                    <div class="bg-gray-800 p-8 rounded-2xl border border-red-500 max-w-sm text-center shadow-2xl pointer-events-auto">
-                        <div class="text-red-500 text-5xl mb-4">⚠️</div>
-                        <p class="text-white font-bold text-xl mb-3">Er ging iets mis</p>
-                        <p class="text-sm text-gray-300 mb-6">${error.message}</p>
-                        
-                        ${downloadBtn.href !== '#' ? 
-                        `<a href="${downloadBtn.href}" download="Mijn_Route_Trofee.3mf" class="bg-green-600 text-white px-4 py-3 font-bold rounded-lg hover:bg-green-500 mb-3 block w-full shadow">Toch Downloaden</a>` 
-                        : ''}
-                        
-                        <button onclick="window.location.href='index.html'" class="bg-gray-200 text-gray-900 px-4 py-3 font-bold rounded-lg hover:bg-white w-full shadow">Terug naar instellingen</button>
+                    <div class="glass-panel p-8 rounded-2xl border border-red-500/30 max-w-sm text-center">
+                        <p class="text-white font-semibold mb-2">Er ging iets mis</p>
+                        <p class="text-sm text-gray-400 mb-6">${error.message}</p>
+                        <button onclick="window.location.href='index.html'" class="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium w-full">Terug</button>
                     </div>
                 `;
             }
         }
 
-        // Start het proces
         fetchAndRender3MF();
     </script>
 </body>
