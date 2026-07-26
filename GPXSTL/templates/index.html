@@ -1,39 +1,212 @@
-<!-- Grid Resolutie -->
-<div>
-    <div class="flex justify-between items-center mb-1">
-        <label class="font-medium">Detail Landschap (Resolutie)</label>
-        <span id="val_resolutie" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">50</span>
-    </div>
-    <p class="text-xs text-gray-500 mb-2">Hogere waarden geven meer detail, maar verhogen de laadtijd.</p>
-    <input type="range" id="resolutie" min="50" max="300" step="10" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
-</div>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stel jouw 3D GPX Trofee samen</title>
+    <!-- Tailwind CSS voor een modern, professioneel design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- localForage om de 5MB opslaglimiet van de browser te omzeilen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <style>
+        /* Aangepaste styling voor de schuifknoppen */
+        input[type=range] { accent-color: #4F46E5; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased p-6 md:p-12">
 
-<!-- Model Grootte -->
-<div>
-    <div class="flex justify-between items-center mb-1">
-        <label class="font-medium">Model Grootte (mm)</label>
-        <span id="val_grootte" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">50</span>
-    </div>
-    <p class="text-xs text-gray-500 mb-2">De fysieke X/Y afmeting van de uiteindelijke 3D print.</p>
-    <input type="range" id="grootte" min="50" max="250" step="10" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
-</div>
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <h1 class="text-3xl font-bold mb-2">Configureer jouw 3D Route Trofee</h1>
+            <p class="text-indigo-200">Upload je GPX en stel de print-parameters perfect in.</p>
+        </div>
 
-<!-- Z-Schaal -->
-<div>
-    <div class="flex justify-between items-center mb-1">
-        <label class="font-medium">Hoogte-overdrijving (Z-Schaal)</label>
-        <span id="val_zschaal" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">1.0</span>
-    </div>
-    <p class="text-xs text-gray-500 mb-2">Maakt bergen steiler en dalen dieper voor een dramatischer effect.</p>
-    <input type="range" id="zschaal" min="1.0" max="10.0" step="0.1" value="1.0" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
-</div>
+        <form id="configForm" class="p-8 space-y-8">
+            
+            <!-- 1. Bestand Upload -->
+            <div class="border-b border-gray-200 pb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-900">1. Route Bestand</h2>
+                <label class="block mb-2 font-medium">Upload GPX-bestand</label>
+                <input type="file" id="gpxFile" accept=".gpx" required
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition">
+            </div>
 
-<!-- Marge -->
-<div>
-    <div class="flex justify-between items-center mb-1">
-        <label class="font-medium">Omgevingsmarge (Graden)</label>
-        <span id="val_marge" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">0.01</span>
+            <!-- 2. Terrein & Model Instellingen -->
+            <div class="border-b border-gray-200 pb-8">
+                <h2 class="text-xl font-semibold mb-6 text-gray-900">2. Terrein & Schaal</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Grid Resolutie -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Detail Landschap (Resolutie)</label>
+                            <span id="val_resolutie" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">50</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Hogere waarden geven meer detail, maar verhogen de laadtijd.</p>
+                        <input type="range" id="resolutie" min="50" max="300" step="10" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Model Grootte -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Model Grootte (mm)</label>
+                            <span id="val_grootte" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">50</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">De fysieke X/Y afmeting van de uiteindelijke 3D print.</p>
+                        <input type="range" id="grootte" min="50" max="250" step="10" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Z-Schaal -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Hoogte-overdrijving (Z-Schaal)</label>
+                            <span id="val_zschaal" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">1.0</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Maakt bergen steiler en dalen dieper voor een dramatischer effect.</p>
+                        <input type="range" id="zschaal" min="1.0" max="10.0" step="0.1" value="1.0" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Marge -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Omgevingsmarge (Graden)</label>
+                            <span id="val_marge" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">0.01</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Hoeveel extra landschap er rondom de GPS-route wordt meegenomen.</p>
+                        <input type="range" id="marge" min="0.01" max="0.10" step="0.01" value="0.01" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Route, Bodem & Sokkel Instellingen -->
+            <div class="pb-4">
+                <h2 class="text-xl font-semibold mb-6 text-gray-900">3. Route & Sokkel Details</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Route Breedte -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Breedte Route (mm)</label>
+                            <span id="val_breedte" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">0.5</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Hoe breed de wandel-/fietslijn op de print wordt getekend.</p>
+                        <input type="range" id="breedte" min="0.5" max="5.0" step="0.1" value="0.5" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Route Dikte -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Dikte Route (mm)</label>
+                            <span id="val_dikte" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">0.5</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Hoe ver de route uitsteekt boven het landoppervlak.</p>
+                        <input type="range" id="dikte" min="0.5" max="5.0" step="0.1" value="0.5" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Boord Marge -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Sokkel Rand (mm)</label>
+                            <span id="val_boordmarge" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">2.0</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">Hoe ver de zwarte basis rondom het model uitsteekt (voor tekst).</p>
+                        <input type="range" id="boordmarge" min="2.0" max="30.0" step="1.0" value="2.0" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Boord Dikte -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium">Sokkel Diepte (mm)</label>
+                            <span id="val_boorddikte" class="text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded">2.0</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">De hoogte/diepte van de zwarte bodemplaat waarop het landschap rust.</p>
+                        <input type="range" id="boorddikte" min="2.0" max="20.0" step="0.5" value="2.0" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-200 flex items-center gap-2">
+                    Genereer 3D Preview
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </form>
     </div>
-    <p class="text-xs text-gray-500 mb-2">Hoeveel extra landschap er rondom de GPS-route wordt meegenomen.</p>
-    <input type="range" id="marge" min="0.01" max="0.10" step="0.01" value="0.01" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
-</div>
+
+    <!-- JavaScript voor inlezen en doorsturen -->
+    <script>
+        // Functie om schuifknoppen te koppelen aan de tekstvakjes
+        function setupSlider(sliderId, displayId) {
+            const slider = document.getElementById(sliderId);
+            const display = document.getElementById(displayId);
+            slider.addEventListener('input', function() {
+                display.textContent = this.value;
+            });
+        }
+
+        setupSlider('resolutie', 'val_resolutie');
+        setupSlider('grootte', 'val_grootte');
+        setupSlider('zschaal', 'val_zschaal');
+        setupSlider('marge', 'val_marge');
+        setupSlider('breedte', 'val_breedte');
+        setupSlider('dikte', 'val_dikte');
+        setupSlider('boordmarge', 'val_boordmarge');
+        setupSlider('boorddikte', 'val_boorddikte');
+
+        // Formulier afhandeling
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            const fileInput = document.getElementById('gpxFile');
+            const btn = e.target.querySelector('button[type="submit"]');
+            
+            if (!fileInput.files.length) {
+                alert("Selecteer eerst een GPX-bestand.");
+                return;
+            }
+
+            // Pas knop aan naar laad-status
+            btn.innerHTML = 'Bestand verwerken... <svg class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            btn.disabled = true;
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            // Asynchrone onload functie voor localForage
+            reader.onload = async function(event) {
+                try {
+                    // Sla het (potentieel grote) GPX bestand op via localForage (IndexedDB)
+                    await localforage.setItem('gpxData', event.target.result);
+
+                    // De kleine sliders mogen gewoon in de normale sessionStorage
+                    sessionStorage.setItem('resolutie', document.getElementById('resolutie').value);
+                    sessionStorage.setItem('grootte', document.getElementById('grootte').value);
+                    sessionStorage.setItem('zschaal', document.getElementById('zschaal').value);
+                    sessionStorage.setItem('marge', document.getElementById('marge').value);
+                    sessionStorage.setItem('breedte', document.getElementById('breedte').value);
+                    sessionStorage.setItem('dikte', document.getElementById('dikte').value);
+                    sessionStorage.setItem('boordmarge', document.getElementById('boordmarge').value);
+                    sessionStorage.setItem('boorddikte', document.getElementById('boorddikte').value);
+
+                    // Spring over naar preview.html
+                    window.location.href = 'preview.html';
+                } catch (error) {
+                    alert("Fout bij het opslaan van het bestand: " + error);
+                    btn.innerHTML = 'Genereer 3D Preview';
+                    btn.disabled = false;
+                }
+            };
+            
+            // Start het inlezen
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+</html>
