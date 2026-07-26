@@ -1,105 +1,13 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview 3D Trofee</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Import maps polyfill voor Three.js modules -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-      }
-    </script>
-</head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen flex flex-col">
-
-    <!-- Navbar -->
-    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-indigo-600">Jouw 3D Preview</h1>
-        <div class="text-sm text-gray-500">Stap 2 van 3</div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-grow flex flex-col md:flex-row p-6 gap-6 max-w-7xl mx-auto w-full">
-        
-        <!-- 3D Viewer Area (Nu met echte Three.js integratie) -->
-        <div id="viewer-container" class="flex-grow bg-gray-900 rounded-xl shadow-lg border border-gray-200 overflow-hidden relative min-h-[400px] flex items-center justify-center cursor-move">
-            
-            <!-- Loading Overlay (Verdwijnt zodra het model is geladen) -->
-            <div id="loading-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center text-white z-10">
-                <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-indigo-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="text-lg font-medium tracking-wide">Jouw model wordt gegenereerd...</p>
-                <p class="text-sm text-gray-400 mt-2">Dit kan enkele seconden duren.</p>
-            </div>
-
-            <!-- Viewer Controls overlay -->
-            <div class="absolute bottom-4 right-4 flex gap-2 z-10 pointer-events-none">
-                <div class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs pointer-events-auto">
-                    Muis = Draaien | Scroll = Zoomen
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar met Acties -->
-        <aside class="w-full md:w-80 flex flex-col gap-4">
-            
-            <!-- Info Box -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="font-bold text-lg mb-2">Model Specificaties</h3>
-                <ul class="text-sm text-gray-600 space-y-2 mb-6">
-                    <li class="flex justify-between"><span>Geschatte afmeting:</span> <span class="font-semibold text-gray-800">10x10 cm</span></li>
-                    <li class="flex justify-between"><span>Materiaal:</span> <span class="font-semibold text-gray-800">PLA (4 Kleuren)</span></li>
-                    <li class="flex justify-between"><span>Bestandstype:</span> <span class="font-semibold text-gray-800">3MF (Bambu/Prusa)</span></li>
-                </ul>
-
-                <h3 class="font-bold text-xl mb-1 text-gray-900">€ 24,95</h3>
-                <p class="text-xs text-gray-500 mb-6">Inclusief BTW & generatie</p>
-                
-                <!-- Knoppen -->
-                <div class="space-y-3">
-                    <button onclick="window.location.href='checkout.html'" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-200 text-center flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
-                        </svg>
-                        Afrekenen & Downloaden
-                    </button>
-                    
-                    <button onclick="window.location.href='index.html'" class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold py-3 px-4 rounded-lg transition duration-200 text-center">
-                        Terug om aan te passen
-                    </button>
-                </div>
-            </div>
-
-            <!-- Hulp widget -->
-            <div class="bg-indigo-50 text-indigo-800 rounded-xl p-5 border border-indigo-100">
-                <h4 class="font-bold text-sm mb-1">Ziet het er niet goed uit?</h4>
-                <p class="text-xs">Speel met de Z-schaal om bergen hoger te maken, of vergroot de resolutie als rivieren niet goed worden weergegeven.</p>
-            </div>
-            
-        </aside>
-    </main>
-
-    <!-- Three.js Logica -->
+<!-- Three.js Logica -->
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
 
-        // 1. Instellingen & Setup
         const container = document.getElementById('viewer-container');
         const loadingOverlay = document.getElementById('loading-overlay');
         
         const scene = new THREE.Scene();
-        // Zachte grijze/blauwe kleur als achtergrond
         scene.background = new THREE.Color(0x111827); 
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 2000);
@@ -110,82 +18,92 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         container.appendChild(renderer.domElement);
 
-        // Interactie (draaien, zoomen)
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Belichting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(100, 200, 100);
         scene.add(directionalLight);
 
-        // 2. Render loop
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); // nodig voor damping
+            controls.update(); 
             renderer.render(scene, camera);
         }
         animate();
 
-        // 3. Zorg dat de canvas meeschaalt bij het verkleinen van het scherm
         window.addEventListener('resize', () => {
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
         });
 
-        // 4. API Oproep en inladen van de 3MF
+        // HIER START DE ECHTE KOPPELING MET JOUW SERVER
         async function fetchAndRender3MF() {
             try {
-                /*
-                 * HIER KOMT DE KOPPELING MET JE API:
-                 * Normaal gesproken haal je de instellingen/GPX uit sessionStorage (opgeslagen op index.html).
-                 * Daarna stuur je deze via POST naar je API om de bytes (ArrayBuffer) op te halen.
-                 */
-                
-                // VOORBEELD LOGICA (uitcommentariëren en aanpassen zodra index.html klaar is):
-                // const formData = new FormData();
-                // formData.append('gpxFile', sessionStorage.getItem('gpxData')); // pseudo-code
-                // const response = await fetch('/api/generate', { method: 'POST', body: formData });
-                // const arrayBuffer = await response.arrayBuffer();
+                // 1. Haal de GPX tekst op die index.html in het geheugen heeft gezet
+                const gpxString = sessionStorage.getItem('gpxData');
+                if (!gpxString) {
+                    throw new Error("Geen GPX bestand gevonden in het geheugen. Ga terug naar de startpagina en upload opnieuw.");
+                }
 
-                /* TIJDELIJKE SIMULATIE OM DE LOADER TE VERBERGEN (Verwijder dit in productie): */
-                setTimeout(() => { loadingOverlay.classList.add('hidden'); }, 1500);
-                
-                /*
-                 * Zodra je de arrayBuffer hebt, render je hem zo in Three.js:
-                 *
-                 * const loader = new ThreeMFLoader();
-                 * loader.parse(arrayBuffer, function ( object ) {
-                 *     // Bepaal het centrum van het model om hem mooi in het midden van het scherm te zetten
-                 *     const box = new THREE.Box3().setFromObject(object);
-                 *     const center = box.getCenter(new THREE.Vector3());
-                 *     object.position.sub(center);
-                 *     
-                 *     // Z-up naar Y-up correctie (vaak nodig bij 3D print formaten)
-                 *     object.rotation.x = -Math.PI / 2;
-                 *
-                 *     scene.add( object );
-                 *     
-                 *     // Verberg het laadscherm
-                 *     loadingOverlay.classList.add('hidden');
-                 * });
-                 */
+                // 2. Bouw het pakketje op voor de Flask API
+                const formData = new FormData();
+                // We maken van de tekst weer een bestandstype zodat Flask hem herkent
+                const gpxBlob = new Blob([gpxString], { type: 'application/gpx+xml' });
+                formData.append('gpxFile', gpxBlob, 'route.gpx');
+
+                // Voeg optionele slider waarden toe (als ze niet bestaan, pakt de backend je defaults)
+                const params = ['resolutie', 'marge', 'breedte', 'dikte', 'zschaal', 'grootte', 'boordmarge', 'boorddikte'];
+                params.forEach(param => {
+                    const val = sessionStorage.getItem(param);
+                    if (val) formData.append(param, val);
+                });
+
+                // 3. Stuur naar jouw Flask backend op Render
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Server gaf foutcode ${response.status} terug.`);
+                }
+
+                // 4. Converteer de reactie (de 3MF download) naar ruwe bytes (ArrayBuffer)
+                const arrayBuffer = await response.arrayBuffer();
+
+                // 5. Laad dit in via de ThreeMFLoader
+                const loader = new ThreeMFLoader();
+                loader.parse(arrayBuffer, function ( object ) {
+                    // Zet het model exact in het midden van het scherm
+                    const box = new THREE.Box3().setFromObject(object);
+                    const center = box.getCenter(new THREE.Vector3());
+                    object.position.sub(center);
+                    
+                    // Z-up naar Y-up correctie (vaak nodig bij 3D print software)
+                    object.rotation.x = -Math.PI / 2;
+
+                    scene.add( object );
+                    
+                    // Verberg het laadscherm als we succesvol zijn
+                    loadingOverlay.classList.add('hidden');
+                });
 
             } catch (error) {
-                console.error("Fout bij het laden van het 3MF bestand:", error);
+                console.error("Fout bij laden:", error);
                 loadingOverlay.innerHTML = `
                     <p class="text-red-400 font-bold text-lg mb-2">Er ging iets mis :(</p>
-                    <p class="text-sm text-gray-300">${error.message}</p>
-                    <button onclick="window.location.href='index.html'" class="mt-4 bg-white text-gray-900 px-4 py-2 rounded text-sm hover:bg-gray-200">Terug naar begin</button>
+                    <p class="text-sm text-gray-300 px-6 text-center">${error.message}</p>
+                    <button onclick="window.location.href='index.html'" class="mt-6 bg-white text-gray-900 px-4 py-2 font-bold rounded text-sm hover:bg-gray-200 shadow">Terug naar begin</button>
                 `;
             }
         }
 
-        // Start het proces
         fetchAndRender3MF();
     </script>
 </body>
