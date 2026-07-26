@@ -1,7 +1,8 @@
-Flask==3.0.2
-gpxpy==1.6.2
-numpy==1.26.4
-numpy-stl==3.1.1
-srtm.py==0.3.7
-scipy==1.11.4
+Flask==3.0.0
 gunicorn==21.2.0
+numpy==1.26.0
+scipy==1.11.3
+trimesh==4.0.5
+gpxpy==1.6.2
+SRTM.py==0.3.7
+requests==2.31.0
