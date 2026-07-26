@@ -1,455 +1,79 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-TZRRHWHG');</script>
-<!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4004546602111006"
-     crossorigin="anonymous"></script>
-    <title>Jouw Unieke 3D Berg-Trofee Preview</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --border-color: #334155;
-        }
-        body { 
-            <!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TZRRHWHG"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg-color); 
-            color: var(--text-color); 
-            margin: 0; 
-            padding: 20px; 
-            display: flex;
-            justify-content: center;
-            align-items: stretch;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        
-        /* Layout met linker- en rechteradvertentieblokken die tot beneden doorlopen */
-        .page-layout {
-            display: flex;
-            gap: 20px;
-            max-width: 1450px;
-            width: 100%;
-            justify-content: center;
-            align-items: stretch;
-        }
-        .ad-sidebar {
-            flex: 1;
-            max-width: 280px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            font-size: 14px;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        @media (max-width: 1200px) {
-            .ad-sidebar {
-                display: none;
-            }
-        }
-
-        .wrapper {
-            width: 100%;
-            max-width: 950px;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color);
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-            box-sizing: border-box;
-            align-content: space-between;
-        }
-        @media (max-width: 768px) {
-            .wrapper { grid-template-columns: 1fr; }
-        }
-        .viewer-container {
-            position: relative;
-            width: 100%;
-            height: 480px;
-            background: #090d16;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Fullscreen state */
-        .viewer-container:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            border-radius: 0;
-            border: none;
-        }
-
-        #viewer { 
-            width: 100%; 
-            height: 100%;
-            flex-grow: 1; 
-            position: relative; 
-        }
-
-        #viewer canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-        }
-        
-        .error-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ef4444;
-            font-weight: bold;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.9);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ef4444;
-            display: none;
-            z-index: 20;
-        }
-
-        .viewer-toolbar {
-            display: flex;
-            background: #0f172a;
-            border-top: 1px solid var(--border-color);
-            padding: 8px;
-            gap: 6px;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            flex-wrap: wrap;
-        }
-        .tool-btn {
-            background: #1e293b;
-            color: var(--accent-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        .tool-btn:hover { background: #334155; color: #fff; }
-
-        /* Styling voor de kleurkiezer in de toolbar */
-        .color-picker-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: #1e293b;
-            border: 1px solid var(--border-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-        .color-picker-wrapper input[type="color"] {
-            border: none;
-            width: 22px;
-            height: 22px;
-            padding: 0;
-            background: transparent;
-            cursor: pointer;
-        }
-
-        .fullscreen-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(15, 23, 42, 0.8);
-            color: var(--accent-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 10;
-        }
-        .fullscreen-btn:hover { background: #334155; color: #fff; }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        h2 { color: var(--accent-color); margin-top: 0; font-size: 22px; }
-        p { color: #cbd5e1; font-size: 14px; line-height: 1.5; }
-        
-        .usp-list {
-            list-style: none;
-            padding: 0;
-            margin: 15px 0;
-        }
-        .usp-list li {
-            font-size: 13px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .usp-list li::before {
-            content: "✓";
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            border-radius: 6px;
-            font-weight: bold;
-            text-decoration: none;
-            text-align: center;
-            cursor: pointer;
-            box-sizing: border-box;
-            transition: all 0.2s;
-        }
-        .btn-download {
-            background: var(--accent-color);
-            color: var(--bg-color);
-            font-size: 16px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-        .btn-download:hover { background: var(--accent-hover); transform: translateY(-1px); }
-        .btn-back {
-            background: transparent;
-            color: #94a3b8;
-            border: 1px solid #475569;
-            font-size: 13px;
-            padding: 10px;
-        }
-        .btn-back:hover { background: #334155; color: white; }
-    </style>
+    <title>Preview 3D Trofee</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="page-layout">
-        <!-- Linker Advertentie Container -->
-        <div class="ad-sidebar">
-            <span>[ Linker Advertentie / Grote Skyscraper ]</span>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-indigo-600">Jouw 3D Preview</h1>
+        <div class="text-sm text-gray-500">Stap 2 van 3</div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col md:flex-row p-6 gap-6 max-w-7xl mx-auto w-full">
+        
+        <!-- 3D Viewer Area (Mockup / Placeholder voor Three.js) -->
+        <div class="flex-grow bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative min-h-[400px] flex items-center justify-center">
+            
+            <!-- Dit is waar de 3MF gerenderd wordt door je web-frontend -->
+            <div class="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                </svg>
+                <p class="text-lg font-medium tracking-wide">Interactieve 3D Viewer</p>
+                <p class="text-sm text-gray-400 mt-2">Draai, zoom en bekijk je multi-color model.</p>
+                <p class="text-xs text-gray-500 mt-4">(Hier wordt de 3MF file van de backend getoond)</p>
+            </div>
+
+            <!-- Viewer Controls overlay -->
+            <div class="absolute bottom-4 right-4 flex gap-2">
+                <button class="bg-white text-gray-800 p-2 rounded shadow hover:bg-gray-100" title="Zoom in">+</button>
+                <button class="bg-white text-gray-800 p-2 rounded shadow hover:bg-gray-100" title="Zoom uit">-</button>
+            </div>
         </div>
 
-        <!-- Hoofd Preview Wrapper -->
-        <div class="wrapper">
-            <div>
-                <div class="viewer-container" id="viewer-container">
-                    <button class="fullscreen-btn" onclick="toggleFullScreen()">⛶ Volledig Scherm</button>
-                    <div id="viewer">
-                        <div id="error-box" class="error-message">Kan 3D model niet laden.<br><span id="error-text" style="font-size:12px; color:#94a3b8;"></span></div>
-                    </div>
+        <!-- Sidebar met Acties -->
+        <aside class="w-full md:w-80 flex flex-col gap-4">
+            
+            <!-- Info Box -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="font-bold text-lg mb-2">Model Specificaties</h3>
+                <ul class="text-sm text-gray-600 space-y-2 mb-6">
+                    <li class="flex justify-between"><span>Geschatte afmeting:</span> <span class="font-semibold text-gray-800">10x10 cm</span></li>
+                    <li class="flex justify-between"><span>Materiaal:</span> <span class="font-semibold text-gray-800">PLA (4 Kleuren)</span></li>
+                    <li class="flex justify-between"><span>Bestandstype:</span> <span class="font-semibold text-gray-800">3MF (Bambu/Prusa)</span></li>
+                </ul>
+
+                <h3 class="font-bold text-xl mb-1 text-gray-900">€ 24,95</h3>
+                <p class="text-xs text-gray-500 mb-6">Inclusief BTW & generatie</p>
+                
+                <!-- Knoppen -->
+                <div class="space-y-3">
+                    <button onclick="window.location.href='checkout.html'" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-200 text-center flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
+                        </svg>
+                        Afrekenen & Downloaden
+                    </button>
                     
-                    <div class="viewer-toolbar">
-                        <button class="tool-btn" id="rotate-toggle-btn" onclick="toggleAutoRotate()">⏸ Pauzeer</button>
-                        <button class="tool-btn" onclick="zoomIn()">➕ Zoom</button>
-                        <button class="tool-btn" onclick="zoomOut()">➖ Uit</button>
-                        <button class="tool-btn" onclick="resetCamera()">🎯 Reset</button>
-                        
-                        <!-- Nieuwe Kleur Kiezer Knop in Toolbar -->
-                        <div class="color-picker-wrapper">
-                            <span>Kleur:</span>
-                            <input type="color" id="model-color-picker" value="#64748b" onchange="changeModelColor(this.value)">
-                        </div>
-                    </div>
+                    <button onclick="window.location.href='index.html'" class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold py-3 px-4 rounded-lg transition duration-200 text-center">
+                        Terug om aan te passen
+                    </button>
                 </div>
             </div>
 
-            <div class="sidebar">
-                <div>
-                    <h2>Jouw GPX als Meesterwerk</h2>
-                    <p>Bekijk hierbovend de interactieve 3D-weergave van jouw berglandschap en route.</p>
-
-                    <ul class="usp-list">
-                        <li>Optimale schaduw & contrast</li>
-                        <li>Geschikt voor PLA & Resin printers</li>
-                        <li>Inclusief opstijgend GPX-pad</li>
-                        <li>100% Gratis te downloaden</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <a href="/download-file/preview_model.stl" class="btn btn-download">Download Gratis STL</a>
-                    <a href="/" class="btn btn-back">← Terug naar Instellingen</a>
-                </div>
+            <!-- Hulp widget -->
+            <div class="bg-indigo-50 text-indigo-800 rounded-xl p-5 border border-indigo-100">
+                <h4 class="font-bold text-sm mb-1">Ziet het er niet goed uit?</h4>
+                <p class="text-xs">Speel met de Z-schaal om bergen hoger te maken, of vergroot de resolutie als rivieren niet goed worden weergegeven.</p>
             </div>
-        </div>
-
-        <!-- Rechter Advertentie Container -->
-        <div class="ad-sidebar">
-            <span>[ Rechter Advertentie / Grote Skyscraper ]</span>
-        </div>
-    </div>
-
-    <!-- Three.js Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-    <script>
-        const container = document.getElementById('viewer');
-        const containerWrapper = document.getElementById('viewer-container');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x090d16);
-
-        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        
-        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
-        dirLight1.position.set(100, 200, 150);
-        scene.add(dirLight1);
-
-        const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.3);
-        dirLight2.position.set(-100, -100, -50);
-        scene.add(dirLight2);
-
-        let modelMesh = null;
-        let isAutoRotating = true;
-        let isUserInteracting = false;
-        let defaultCameraPosition = new THREE.Vector3();
-        let maxDim = 100;
-
-        controls.onStart = () => { isUserInteracting = true; };
-        controls.onEnd = () => { setTimeout(() => { isUserInteracting = false; }, 4000); };
-
-        const loader = new THREE.STLLoader();
-        loader.load(
-            '/download-file/preview_model.stl', 
-            function (geometry) {
-                // Standaard startkleur gekoppeld aan de kleurkiezer `#64748b`
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0x64748b,      
-                    roughness: 0.5,       
-                    metalness: 0.1,
-                    polygonOffset: true,  
-                    polygonOffsetFactor: 1,
-                    polygonOffsetUnits: 1
-                });
-                
-                modelMesh = new THREE.Mesh(geometry, material);
-                
-                geometry.computeBoundingBox();
-                const center = new THREE.Vector3();
-                geometry.boundingBox.getCenter(center);
-                
-                geometry.center();
-                controls.target.set(0, 0, 0);
-
-                const size = new THREE.Vector3();
-                geometry.boundingBox.getSize(size);
-                maxDim = Math.max(size.x, size.y, size.z);
-                
-                defaultCameraPosition.set(0, -maxDim * 1.8, maxDim * 1.4);
-                camera.position.copy(defaultCameraPosition);
-                controls.update();
-
-                scene.add(modelMesh);
-            },
-            undefined,
-            function (error) {
-                console.error('Fout bij laden STL:', error);
-                document.getElementById('error-box').style.display = 'block';
-                document.getElementById('error-text').innerText = 'Controleer of het preview-bestand bestaat.';
-            }
-        );
-
-        function toggleAutoRotate() {
-            isAutoRotating = !isAutoRotating;
-            document.getElementById('rotate-toggle-btn').innerText = isAutoRotating ? "⏸ Pauzeer" : "▶ Start";
-        }
-
-        function zoomIn() { camera.position.multiplyScalar(0.85); }
-        function zoomOut() { camera.position.multiplyScalar(1.15); }
-        function resetCamera() {
-            camera.position.copy(defaultCameraPosition);
-            controls.target.set(0, 0, 0);
-            controls.update();
-        }
-
-        // Functie die wordt aangeroepen zodra de gebruiker een kleur kiest
-        function changeModelColor(hexColor) {
-            if (modelMesh) {
-                modelMesh.material.color.set(hexColor);
-            }
-        }
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                containerWrapper.requestFullscreen().catch(err => {
-                    alert(`Fout bij openen fullscreen: ${err.message}`);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function resizeRenderer() {
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            if (width > 0 && height > 0) {
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-                renderer.setSize(width, height);
-            }
-        }
-
-        window.addEventListener('resize', resizeRenderer);
-        document.addEventListener('fullscreenchange', () => {
-            resizeRenderer();
-            setTimeout(resizeRenderer, 50);
-            setTimeout(resizeRenderer, 150);
-            setTimeout(resizeRenderer, 300);
-        });
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (modelMesh && isAutoRotating && !isUserInteracting) {
-                modelMesh.rotation.z += 0.003;
-            }
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
-    </script>
+            
+        </aside>
+    </main>
 </body>
 </html>
