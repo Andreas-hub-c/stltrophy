@@ -28,14 +28,21 @@
                 </div>
             </div>
 
-            <!-- Betaal Sectie -->
+            <!-- Betaal Sectie (Wordt getoond als je nog niet hebt betaald) -->
             <div id="paymentSection" class="space-y-4">
-                <button id="payButton" onclick="simulatePayment()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition duration-200 text-lg">
+                <!-- Vangt de gebruiker op als ze terugkeren van Stripe na betaling -->
+                <div id="processingNotice" class="hidden text-center text-indigo-600 font-semibold py-4">
+                    Betaling gecontroleerd! Bestand wordt gedownload...
+                </div>
+
+                <!-- VERVANG DEZE LINK HIERONDER MET JOUW ECHTE STRIPE PAYMENT LINK -->
+                <a id="payButton" href="https://buy.stripe.com/JOUW_STRIPE_BETAAL_LINK" 
+                   class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition duration-200 text-lg block text-center">
                     Betaal veilig met iDEAL / Bancontact / Creditcard
-                </button>
+                </a>
             </div>
 
-            <!-- Succes / Download Sectie -->
+            <!-- Succes / Download Sectie (Wordt getoond na succesvolle terugkomst) -->
             <div id="successMessage" class="hidden flex-col items-center text-center space-y-4 bg-green-50 border border-green-200 p-8 rounded-2xl">
                 <div class="text-green-600 bg-green-100 p-4 rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,24 +70,21 @@
     </div>
 
     <script>
-        async function simulatePayment() {
-            const payButton = document.getElementById('payButton');
-            const backButton = document.getElementById('backButton');
-            const successMessage = document.getElementById('successMessage');
+        // Controleer of de gebruiker zojuist succesvol is teruggekeerd van Stripe
+        window.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
             
-            payButton.innerText = "Transactie verwerken...";
-            payButton.disabled = true;
-            payButton.classList.add('opacity-50', 'cursor-not-allowed');
-            
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Als Stripe de gebruiker terugstuurt, voegen wij ?success=true toe aan de URL
+            if (urlParams.get('success') === 'true') {
+                document.getElementById('paymentSection').style.display = 'none';
+                document.getElementById('successMessage').classList.remove('hidden');
+                document.getElementById('successMessage').classList.add('flex');
+                document.getElementById('backButton').style.display = 'none';
 
-            payButton.style.display = 'none';
-            backButton.style.display = 'none';
-            successMessage.classList.remove('hidden');
-            successMessage.classList.add('flex');
-
-            downloadBestand();
-        }
+                // Start direct de download vanuit het browsergeheugen
+                await downloadBestand();
+            }
+        });
 
         async function downloadBestand() {
             try {
