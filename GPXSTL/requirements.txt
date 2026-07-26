@@ -6,3 +6,4 @@ trimesh==4.0.5
 gpxpy==1.6.2
 SRTM.py==0.3.7
 requests==2.31.0
+networkx==3.2.1
