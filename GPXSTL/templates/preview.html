@@ -135,7 +135,6 @@
         // 3. Ophalen en Renderen
         async function fetchAndRender3MF() {
             try {
-                // Haal de GPX string nu uit localForage in plaats van sessionStorage
                 statusText.innerText = "GPX data ophalen...";
                 const gpxString = await localforage.getItem('gpxData');
                 
@@ -143,12 +142,11 @@
                     throw new Error("Geen GPX bestand gevonden. Ga terug naar de startpagina en upload opnieuw.");
                 }
 
-                statusText.innerText = "Model wordt gegenereerd op de server...";
+                statusText.innerText = "Model wordt gegenereerd op de server (dit kan 1-2 minuten duren)...";
                 const formData = new FormData();
                 const gpxBlob = new Blob([gpxString], { type: 'application/gpx+xml' });
                 formData.append('gpxFile', gpxBlob, 'route.gpx');
 
-                // Lees eventuele sliders uit index.html in
                 const params = ['resolutie', 'marge', 'breedte', 'dikte', 'zschaal', 'grootte', 'boordmarge', 'boorddikte'];
                 params.forEach(param => {
                     const val = sessionStorage.getItem(param);
@@ -161,15 +159,26 @@
                 });
 
                 if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error || `Server gaf foutcode ${response.status} terug.`);
+                    throw new Error(`Server gaf foutcode ${response.status} terug.`);
                 }
 
-                statusText.innerText = "3MF bestand inladen...";
+                statusText.innerText = "Bestand ontvangen! 3D model uitpakken en opbouwen...";
+                console.log("Start met downloaden van ArrayBuffer...");
+                
                 const arrayBuffer = await response.arrayBuffer();
+                console.log("Bestandsgrootte ontvangen:", (arrayBuffer.byteLength / 1024 / 1024).toFixed(2), "MB");
 
+                // Nu laden we het in Three.js
                 const loader = new ThreeMFLoader();
-                loader.parse(arrayBuffer, function ( object ) {
+                
+                // In nieuwere Three.js versies is loader.parse soms direct/synchroon of vereist het speciale afhandeling
+                try {
+                    console.log("Start met parsen van 3MF...");
+                    // Parseer de buffer. Let op: dit bevriest de browser heel even omdat het een zwaar proces is.
+                    const object = loader.parse(arrayBuffer);
+                    
+                    console.log("Parsen gelukt! Model toevoegen aan scherm...");
+                    
                     // Zet model mooi in het midden
                     const box = new THREE.Box3().setFromObject(object);
                     const center = box.getCenter(new THREE.Vector3());
@@ -178,9 +187,13 @@
                     // 3MF's plat leggen
                     object.rotation.x = -Math.PI / 2;
 
-                    scene.add( object );
+                    scene.add(object);
                     loadingOverlay.classList.add('hidden');
-                });
+                    
+                } catch (parseError) {
+                    console.error("Fout tijdens het uitpakken in Three.js:", parseError);
+                    throw new Error("Het model is te gedetailleerd voor deze browser om als preview te tonen.");
+                }
 
             } catch (error) {
                 console.error("Fout bij laden:", error);
