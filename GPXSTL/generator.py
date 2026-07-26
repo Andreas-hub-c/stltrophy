@@ -5,6 +5,7 @@ import gpxpy
 import srtm
 import numpy as np
 import trimesh
+import gc  # Toegevoegd voor geheugenbeheer
 from dataclasses import dataclass
 from typing import Optional, Union
 from trimesh.creation import box
@@ -66,6 +67,14 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
                         result.append(np.array(segments[idx:idx+geom_len]))
                         idx += geom_len
                 print(f"Succes: {len(result)} waterwegen gevonden.")
+                
+                # --- GEHEUGEN OPRUIMEN ---
+                # De ruwe JSON en segmenten zijn erg groot, we gooien ze direct weg.
+                del data
+                del segments
+                gc.collect()
+                # -------------------------
+
                 return result
         except Exception:
             continue
@@ -171,6 +180,12 @@ def generate_terrain_and_route(
                 for r, c in draw_line_on_grid(ii0, ji0, ii1, ji1, (config.grid_resolutie, config.grid_resolutie)):
                     water_mask[r, c] = True
                     if not sea_mask[r, c]: river_mask[r, c] = True
+        
+        # --- GEHEUGEN OPRUIMEN ---
+        # De segmenten zijn nu verwerkt in de maskers, we kunnen ze weggooien.
+        del osm_segments
+        gc.collect()
+        # -------------------------
 
     grid_z_smoothed = gaussian_filter(grid_z_echt, sigma=1.0)
 
