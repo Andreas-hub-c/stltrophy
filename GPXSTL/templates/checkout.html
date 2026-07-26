@@ -3,62 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afrekenen - Route Trofee</title>
+    <title>Afrekenen - 3D Route Trofee</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 h-screen w-screen m-0 flex items-center justify-center font-sans">
+<body class="bg-gray-50 text-gray-800 font-sans antialiased p-6 md:p-12">
 
-    <div class="bg-white border border-gray-200 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
-        
-        <h1 class="text-2xl font-bold mb-2">Jouw 3D Model is klaar!</h1>
-        <p class="text-gray-600 mb-8">Reken af om het .3MF bestand direct te downloaden en te printen.</p>
-
-        <!-- Product overzicht -->
-        <div class="bg-gray-50 rounded p-4 mb-8 flex justify-between items-center border border-gray-200">
-            <div class="text-left">
-                <p class="font-bold text-lg">Custom Route Trofee</p>
-                <p class="text-sm text-gray-500">.3MF Formaat (Ready to print)</p>
-            </div>
-            <div class="text-2xl font-bold text-green-600">
-                €4,99
-            </div>
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <h1 class="text-3xl font-bold mb-2">Afrekenen & Downloaden</h1>
+            <p class="text-indigo-200">Voltooi je bestelling om direct je 3MF printbestand te ontvangen.</p>
         </div>
 
-        <button id="payButton" onclick="simulatePayment()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded shadow mb-4">
-            Betaal met Bancontact / iDEAL
-        </button>
+        <div class="p-8 space-y-8">
+            <!-- Product Overzicht -->
+            <div class="border border-gray-200 rounded-2xl p-6 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-1">Custom Route Trofee</h2>
+                    <p class="text-sm text-gray-500">Hoogwaardig .3MF bestand voor 3D printing (Direct klaar)</p>
+                </div>
+                <div class="text-3xl font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">
+                    €4,99
+                </div>
+            </div>
 
-        <div id="successMessage" class="hidden flex-col items-center">
-            <div class="text-green-500 mb-2 text-5xl">✓</div>
-            <h2 class="text-xl font-bold mb-1">Betaling Geslaagd!</h2>
-            <p class="text-gray-600 mb-6">Je download start automatisch...</p>
-            
-            <a id="downloadLink" href="#" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded shadow">
-                Klik hier als de download niet start
-            </a>
+            <!-- Betaal Sectie -->
+            <div id="paymentSection" class="space-y-4">
+                <button id="payButton" onclick="simulatePayment()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition duration-200 text-lg">
+                    Betaal veilig met iDEAL / Bancontact / Creditcard
+                </button>
+            </div>
+
+            <!-- Succes / Download Sectie -->
+            <div id="successMessage" class="hidden flex-col items-center text-center space-y-4 bg-green-50 border border-green-200 p-8 rounded-2xl">
+                <div class="text-green-600 bg-green-100 p-4 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Betaling Geslaagd!</h2>
+                <p class="text-gray-600 max-w-md">Bedankt voor je bestelling. Je 3MF printbestand wordt automatisch gedownload.</p>
+                
+                <a id="downloadLink" href="#" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition duration-200 inline-flex items-center gap-2">
+                    Download .3MF Bestand
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Terug knop -->
+            <div class="pt-4 border-t border-gray-200 flex justify-start">
+                <button onclick="window.location.href='preview.html'" id="backButton" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow transition duration-200">
+                    &larr; Terug naar preview
+                </button>
+            </div>
         </div>
-
-        <button onclick="window.location.href='preview.html'" id="backButton" class="mt-4 text-gray-500 hover:text-gray-800 text-sm">
-            &larr; Terug naar preview
-        </button>
     </div>
 
     <script>
         async function simulatePayment() {
-            const payBtn = document.getElementById('payButton');
-            const backBtn = document.getElementById('backButton');
-            const successMsg = document.getElementById('successMessage');
+            const payButton = document.getElementById('payButton');
+            const backButton = document.getElementById('backButton');
+            const successMessage = document.getElementById('successMessage');
             
-            payBtn.innerText = "Bezig met verwerken...";
-            payBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            payButton.innerText = "Transactie verwerken...";
+            payButton.disabled = true;
+            payButton.classList.add('opacity-50', 'cursor-not-allowed');
             
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            payBtn.style.display = 'none';
-            backBtn.style.display = 'none';
-            successMsg.classList.remove('hidden');
-            successMsg.classList.add('flex');
+            payButton.style.display = 'none';
+            backButton.style.display = 'none';
+            successMessage.classList.remove('hidden');
+            successMessage.classList.add('flex');
 
             downloadBestand();
         }
@@ -67,7 +86,7 @@
             try {
                 const blob = await localforage.getItem('final_3mf_file');
                 if (!blob) {
-                    alert("Fout: Het bestand kon niet gevonden worden. Ga terug en genereer opnieuw.");
+                    alert("Waarschuwing: Geen opgeslagen bestand gevonden. Genereer het model opnieuw via de startpagina.");
                     return;
                 }
                 const url = URL.createObjectURL(blob);
