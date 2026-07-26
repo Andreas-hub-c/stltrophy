@@ -136,7 +136,7 @@
         </form>
     </div>
 
-    <!-- JavaScript voor live-updates van de getalletjes en de navigatie -->
+    <!-- JavaScript voor inlezen en doorsturen -->
     <script>
         // Functie om schuifknoppen te koppelen aan de tekstvakjes
         function setupSlider(sliderId, displayId) {
@@ -156,20 +156,46 @@
         setupSlider('boordmarge', 'val_boordmarge');
         setupSlider('boorddikte', 'val_boorddikte');
 
-        // Opslaan en doorsturen
+        // HET NIEUWE, WERKLIJKE INLEES- EN OPSLAANSCRIPT
         document.getElementById('configForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // Voorkom dat de pagina standaard ververst
             
-            // In een echte web-app stuur je hier het GPX-bestand en de instellingen 
-            // naar je Python server. Voor nu simuleren we de laad-transitie.
+            const fileInput = document.getElementById('gpxFile');
             const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerHTML = 'Bezig met genereren... <svg class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            
+            if (!fileInput.files.length) {
+                alert("Selecteer eerst een GPX-bestand.");
+                return;
+            }
+
+            // Pas knop aan naar laad-status
+            btn.innerHTML = 'Bestand verwerken... <svg class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
             btn.disabled = true;
 
-            // Simuleer server-laadtijd en stuur door
-            setTimeout(() => {
+            // Lees het GPX bestand uit
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                // Sla de GPX tekst op
+                sessionStorage.setItem('gpxData', event.target.result);
+
+                // Sla alle slider waarden op
+                sessionStorage.setItem('resolutie', document.getElementById('resolutie').value);
+                sessionStorage.setItem('grootte', document.getElementById('grootte').value);
+                sessionStorage.setItem('zschaal', document.getElementById('zschaal').value);
+                sessionStorage.setItem('marge', document.getElementById('marge').value);
+                sessionStorage.setItem('breedte', document.getElementById('breedte').value);
+                sessionStorage.setItem('dikte', document.getElementById('dikte').value);
+                sessionStorage.setItem('boordmarge', document.getElementById('boordmarge').value);
+                sessionStorage.setItem('boorddikte', document.getElementById('boorddikte').value);
+
+                // Spring over naar preview.html, die het pakketje nu wél zal vinden!
                 window.location.href = 'preview.html';
-            }, 800);
+            };
+            
+            // Start het inlezen
+            reader.readAsText(file);
         });
     </script>
 </body>
