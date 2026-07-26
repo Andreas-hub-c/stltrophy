@@ -7,95 +7,74 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 </head>
-<body class="bg-[#121212] text-white h-screen w-screen m-0 flex items-center justify-center font-sans">
+<body class="bg-gray-100 text-gray-900 h-screen w-screen m-0 flex items-center justify-center font-sans">
 
-    <div class="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center backdrop-blur-lg">
+    <div class="bg-white border border-gray-200 p-8 rounded-lg shadow-xl max-w-md w-full text-center">
         
-        <h1 class="text-3xl font-bold mb-2">Jouw 3D Model is klaar!</h1>
-        <p class="text-gray-400 mb-8">Reken af om het high-res .3MF bestand direct te downloaden en te printen.</p>
+        <h1 class="text-2xl font-bold mb-2">Jouw 3D Model is klaar!</h1>
+        <p class="text-gray-600 mb-8">Reken af om het .3MF bestand direct te downloaden en te printen.</p>
 
         <!-- Product overzicht -->
-        <div class="bg-black/30 rounded-xl p-4 mb-8 flex justify-between items-center border border-white/5">
+        <div class="bg-gray-50 rounded p-4 mb-8 flex justify-between items-center border border-gray-200">
             <div class="text-left">
-                <p class="font-semibold text-lg">Custom Route Trofee</p>
+                <p class="font-bold text-lg">Custom Route Trofee</p>
                 <p class="text-sm text-gray-500">.3MF Formaat (Ready to print)</p>
             </div>
-            <div class="text-2xl font-bold text-green-400">
+            <div class="text-2xl font-bold text-green-600">
                 €4,99
             </div>
         </div>
 
-        <!-- HIER KOMT LATER JE ECHTE BETAALKNOP (Stripe/PayPal) -->
-        <!-- Voor nu simuleren we een succesvolle betaling -->
-        <button id="payButton" onclick="simulatePayment()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-transform transform hover:scale-[1.02] mb-4">
-            Betaal met Bancontact / iDEAL / Creditcard
+        <button id="payButton" onclick="simulatePayment()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded shadow mb-4">
+            Betaal met Bancontact / iDEAL
         </button>
 
         <div id="successMessage" class="hidden flex-col items-center">
-            <div class="text-green-500 mb-2">
-                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <h2 class="text-xl font-bold text-white mb-1">Betaling Geslaagd!</h2>
-            <p class="text-gray-400 mb-6">Je download start automatisch...</p>
+            <div class="text-green-500 mb-2 text-5xl">✓</div>
+            <h2 class="text-xl font-bold mb-1">Betaling Geslaagd!</h2>
+            <p class="text-gray-600 mb-6">Je download start automatisch...</p>
             
-            <a id="downloadLink" href="#" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+            <a id="downloadLink" href="#" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded shadow">
                 Klik hier als de download niet start
             </a>
         </div>
 
-        <button onclick="window.location.href='preview.html'" id="backButton" class="mt-4 text-gray-500 hover:text-white text-sm transition-colors">
-            Terug naar preview
+        <button onclick="window.location.href='preview.html'" id="backButton" class="mt-4 text-gray-500 hover:text-gray-800 text-sm">
+            &larr; Terug naar preview
         </button>
     </div>
 
     <script>
-        // Deze functie roep je in de toekomst aan ZODRA Stripe of PayPal aangeeft dat de betaling is gelukt.
         async function simulatePayment() {
             const payBtn = document.getElementById('payButton');
             const backBtn = document.getElementById('backButton');
             const successMsg = document.getElementById('successMessage');
             
-            // Simuleer een laad-animatie van de betaling
             payBtn.innerText = "Bezig met verwerken...";
             payBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
-            // Wacht 1.5 seconden (simulatie van bank-communicatie)
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            // Betaling gelukt UI tonen
             payBtn.style.display = 'none';
             backBtn.style.display = 'none';
             successMsg.classList.remove('hidden');
             successMsg.classList.add('flex');
 
-            // Nu halen we het bestand op uit de browser en starten de download
             downloadBestand();
         }
 
         async function downloadBestand() {
             try {
-                // Haal het opgeslagen bestand (Blob) op uit LocalForage
                 const blob = await localforage.getItem('final_3mf_file');
-                
                 if (!blob) {
-                    alert("Fout: Het bestand kon niet meer gevonden worden. Ga terug en genereer opnieuw.");
+                    alert("Fout: Het bestand kon niet gevonden worden. Ga terug en genereer opnieuw.");
                     return;
                 }
-
-                // Maak een download-url van het opgeslagen bestand
                 const url = URL.createObjectURL(blob);
-                
-                // Koppel de URL aan de handmatige download knop (als fallback)
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = url;
                 downloadLink.download = "Mijn_Route_Trofee.3mf";
-
-                // Forceer de download automatisch!
                 downloadLink.click();
-
-                // Optioneel: Maak de opslag leeg na een succesvolle download om geheugen te besparen
-                // await localforage.removeItem('final_3mf_file'); 
-
             } catch (error) {
                 console.error("Fout bij ophalen bestand:", error);
                 alert("Er ging iets mis met het downloaden van je bestand.");
