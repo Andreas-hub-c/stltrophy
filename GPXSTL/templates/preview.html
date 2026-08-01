@@ -90,26 +90,35 @@
         let width = container.clientWidth;
         let height = container.clientHeight;
 
-        // Vergroot de 'far' clipping plane naar 50000 zodat het model nooit verdwijnt bij het bewegen
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 50000);
         let defaultCameraPosition = new THREE.Vector3(0, 200, 200);
         camera.position.copy(defaultCameraPosition);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        // --- GEOPTIMALISEERDE BELICHTING VOOR DIEPTE & SCHADUWEN ---
+        // Zachter omgevingslicht zodat details niet wegvallen
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        dirLight.position.set(100, 200, 50);
-        scene.add(dirLight);
 
-        // Knoppen functionaliteit voor inzoomen, uitzoomen en reset
+        // Hoofdlicht (Key light) van rechtsboven voor sterke contouren op de bergen
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        mainLight.position.set(200, 300, 200);
+        scene.add(mainLight);
+
+        // Invullicht (Fill light) van links om te zorgen dat de schaduwzijde subtiel zichtbaar blijft
+        const fillLight = new THREE.DirectionalLight(0x90b0ff, 0.5);
+        fillLight.position.set(-200, 100, -100);
+        scene.add(fillLight);
+        // ----------------------------------------------------------
+
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             camera.position.lerp(controls.target, 0.15);
         });
@@ -183,10 +192,11 @@
                 try {
                     const object = loader.parse(arrayBuffer);
                     
-                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
-                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.9 });
-                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3 });
-                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+                    // Materialen met verfijnde ruwheid voor een realistisch 3D-print effect met diepte
+                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
+                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.6 });
+                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2 });
+                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
 
                     object.traverse(function (child) {
                         if (child.isMesh) {
