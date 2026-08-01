@@ -8,3 +8,4 @@ SRTM.py==0.3.7
 requests==2.31.0
 networkx==3.2.1
 lxml
+matplotlib
