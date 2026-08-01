@@ -97,27 +97,33 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
+        
+        // --- SCHADUWEN ACTIEF MAKEN OP RENDERER ---
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // --- GEOPTIMALISEERDE BELICHTING VOOR DIEPTE & SCHADUWEN ---
-        // Zachter omgevingslicht zodat details niet wegvallen
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        // Omgevingslicht voor basiszichtbaarheid
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
 
-        // Hoofdlicht (Key light) van rechtsboven voor sterke contouren op de bergen
-        const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        mainLight.position.set(200, 300, 200);
+        // Hoofdlicht dat schaduwen werpt en zorgt voor diepte op de bergen
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.3);
+        mainLight.position.set(150, 300, 150);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        mainLight.shadow.bias = -0.0001;
         scene.add(mainLight);
 
-        // Invullicht (Fill light) van links om te zorgen dat de schaduwzijde subtiel zichtbaar blijft
-        const fillLight = new THREE.DirectionalLight(0x90b0ff, 0.5);
-        fillLight.position.set(-200, 100, -100);
+        // Subtiel invullicht van de andere kant
+        const fillLight = new THREE.DirectionalLight(0x90b0ff, 0.4);
+        fillLight.position.set(-150, 100, -150);
         scene.add(fillLight);
-        // ----------------------------------------------------------
 
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             camera.position.lerp(controls.target, 0.15);
@@ -192,14 +198,21 @@
                 try {
                     const object = loader.parse(arrayBuffer);
                     
-                    // Materialen met verfijnde ruwheid voor een realistisch 3D-print effect met diepte
-                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
-                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.6 });
-                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2 });
-                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.1 });
+                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, metalness: 0.05 });
+                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1 });
+                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.1 });
 
                     object.traverse(function (child) {
                         if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Bereken normals zodat licht en schaduw correct over het terrein vloeien
+                            if (child.geometry) {
+                                child.geometry.computeVertexNormals();
+                            }
+
                             const name = child.name ? child.name.toLowerCase() : "";
                             if (name.includes('sokkel')) {
                                 child.material = matSokkel;
