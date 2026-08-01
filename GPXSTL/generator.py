@@ -11,6 +11,7 @@ from typing import Optional, Union
 from trimesh.creation import box
 from scipy.interpolate import splev, splprep
 from scipy.ndimage import gaussian_filter, gaussian_filter1d, map_coordinates, uniform_filter, label
+from matplotlib.path import Path  # Nodig voor het opvullen van meren en gesloten waterpolygonen
 
 # =====================================================================
 # CONFIGURATIE VOOR WEB & API
@@ -168,13 +169,37 @@ def generate_terrain_and_route(
     if osm_segments:
         lon_step = (max_lon - min_lon) / (config.grid_resolutie - 1)
         lat_step = (max_lat - min_lat) / (config.grid_resolutie - 1)
+        
+        # Rooster coördinaten voor het opvullen van gesloten waterpolygonen (meren/vijvers)
+        grid_c, grid_r = np.meshgrid(np.arange(config.grid_resolutie), np.arange(config.grid_resolutie))
+        grid_points = np.column_stack((grid_c.ravel(), grid_r.ravel()))
+
         for seg in osm_segments:
-            for k in range(len(seg) - 1):
-                ji0, ii0 = int(round((seg[k][0] - min_lon) / lon_step)), int(round((seg[k][1] - min_lat) / lat_step))
-                ji1, ii1 = int(round((seg[k+1][0] - min_lon) / lon_step)), int(round((seg[k+1][1] - min_lat) / lat_step))
-                for r, c in draw_line_on_grid(ii0, ji0, ii1, ji1, (config.grid_resolutie, config.grid_resolutie)):
-                    water_mask[r, c] = True
-                    if not sea_mask[r, c]: river_mask[r, c] = True
+            # Check of het watersegment een gesloten lus vormt (meer/vijver)
+            is_closed = len(seg) > 3 and np.allclose(seg[0], seg[-1], atol=1e-4)
+
+            if is_closed:
+                polygon_pixels = []
+                for pt in seg:
+                    c = (pt[0] - min_lon) / lon_step
+                    r = (pt[1] - min_lat) / lat_step
+                    polygon_pixels.append([c, r])
+                try:
+                    path = Path(polygon_pixels)
+                    mask = path.contains_points(grid_points).reshape((config.grid_resolutie, config.grid_resolutie))
+                    water_mask[mask] = True
+                    if not np.any(sea_mask[mask]):
+                        river_mask[mask] = True
+                except Exception as e:
+                    print(f"Fout bij invullen water polygoon: {e}")
+            else:
+                # Open rivierlijnen tekenen zoals voorheen
+                for k in range(len(seg) - 1):
+                    ji0, ii0 = int(round((seg[k][0] - min_lon) / lon_step)), int(round((seg[k][1] - min_lat) / lat_step))
+                    ji1, ii1 = int(round((seg[k+1][0] - min_lon) / lon_step)), int(round((seg[k+1][1] - min_lat) / lat_step))
+                    for r, c in draw_line_on_grid(ii0, ji0, ii1, ji1, (config.grid_resolutie, config.grid_resolutie)):
+                        water_mask[r, c] = True
+                        if not sea_mask[r, c]: river_mask[r, c] = True
         
         del osm_segments
         gc.collect()
@@ -193,7 +218,6 @@ def generate_terrain_and_route(
     z_off = config.boord_dikte 
     
     Z_terrein_top = z_geschaald.copy() + config.bodem_dikte + z_off
-    # Gebruik hier de instelbare water_diepte parameter i.p.v. de hardcoded - 0.6
     Z_terrein_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte - config.water_diepte + z_off
     Z_terrein_top[sea_mask] = config.bodem_dikte + z_off
     Z_terrein_bot = np.full_like(Z_terrein_top, z_off)
