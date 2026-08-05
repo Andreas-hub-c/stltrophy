@@ -29,7 +29,7 @@
             <div class="border border-gray-200 rounded-2xl overflow-hidden relative bg-gray-900 h-[450px] shadow-inner">
                 <div id="canvas-container" class="w-full h-full"></div>
                 
-                <!-- Uitgebreide Besturingsknoppen -->
+                <!-- Intuïtieve Besturingsknoppen -->
                 <div class="absolute bottom-4 right-4 z-10 flex flex-wrap gap-2 bg-white/90 backdrop-blur p-2 rounded-xl shadow-lg border border-gray-200">
                     <button id="btnZoomIn" title="Inzoomen" class="p-2 hover:bg-gray-100 rounded-lg text-gray-700 font-bold transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -47,6 +47,11 @@
                     <button id="btnReset" title="Reset Camera Positie" class="px-3 py-1 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition">
                         Reset
                     </button>
+                </div>
+
+                <!-- Hulptekst voor muisbediening -->
+                <div class="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur text-white text-[11px] px-3 py-1.5 rounded-lg pointer-events-none">
+                    💡 <b>Muis:</b> Links klikken + slepen = draaien | Rechts klikken + slepen = verschuiven
                 </div>
 
                 <!-- Loading Overlay -->
@@ -146,6 +151,12 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        // Intuïtieve besturing instellen (Rechtermuisknop = pannen / verschuiven)
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+        };
 
         let isAutoRotating = true;
         let loadedModelGroup = null;
@@ -188,13 +199,13 @@
             rotateToggleBtn.innerText = isAutoRotating ? "⏸️ Stop Rotatie" : "▶️ Start Rotatie";
         }
 
-        // --- GECORRIGEERDE TOP-VIEW FUNCTIE ---
+        // --- PERFECTE TOP-VIEW FUNCTIE ---
         document.getElementById('btnTopView').addEventListener('click', () => {
             isAutoRotating = false;
             updateRotateButtonText();
-            // Plaats de camera recht van boven op de Y-as ten opzichte van het model
+            // Plaats de camera exact boven het middenpunt en richt de 'up' vector naar boven
             camera.position.set(0, 350, 0);
-            camera.up.set(0, 0, -1); // Zorg dat de bovenkant correct is georiënteerd
+            camera.up.set(0, 0, -1);
             controls.target.set(0, 0, 0);
             controls.update();
         });
@@ -202,7 +213,7 @@
         document.getElementById('btnReset').addEventListener('click', () => {
             isAutoRotating = true;
             updateRotateButtonText();
-            camera.up.set(0, 1, 0); // Reset camera op-vector naar standaard
+            camera.up.set(0, 1, 0);
             camera.position.copy(defaultCameraPosition);
             controls.target.set(0, 0, 0);
             controls.update();
@@ -219,8 +230,8 @@
         function animate() {
             requestAnimationFrame(animate);
             if (isAutoRotating && loadedModelGroup) {
-                // --- GECORRIGEERDE ROTATIE OM EIGEN AS (Y-as in Three.js na rotatie) ---
-                loadedModelGroup.rotation.y += 0.005; 
+                // Roteer rond de ware verticale as (de X-as in deze rotatiestand van het model)
+                loadedModelGroup.rotation.x += 0.005; 
             }
             controls.update();
             renderer.render(scene, camera);
@@ -311,8 +322,11 @@
                         }
                     });
 
+                    // Bereken exact het middelpunt van de geometrie
                     const box = new THREE.Box3().setFromObject(object);
                     const center = box.getCenter(new THREE.Vector3());
+                    
+                    // Verplaats het object naar het lokale nulpunt (zodat het middelpunt ook echt het draaipunt is)
                     object.position.sub(center);
                     object.rotation.x = -Math.PI / 2;
 
