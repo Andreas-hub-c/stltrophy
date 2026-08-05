@@ -21,7 +21,7 @@
         <!-- Header -->
         <div class="bg-indigo-600 p-8 text-white text-center">
             <h1 class="text-3xl font-bold mb-2">Jouw 3D Route Trofee Preview</h1>
-            <p class="text-indigo-200">Draai en inspecteer je model hieronder.</p>
+            <p class="text-indigo-200">Draai, inspecteer en pas de kleuren van je model hieronder aan.</p>
         </div>
 
         <div class="p-8 space-y-8">
@@ -29,8 +29,8 @@
             <div class="border border-gray-200 rounded-2xl overflow-hidden relative bg-gray-900 h-[450px] shadow-inner">
                 <div id="canvas-container" class="w-full h-full"></div>
                 
-                <!-- Handige 3D Viewer Besturingsknoppen -->
-                <div class="absolute bottom-4 right-4 z-10 flex gap-2 bg-white/90 backdrop-blur p-2 rounded-xl shadow-lg border border-gray-200">
+                <!-- Uitgebreide Besturingsknoppen -->
+                <div class="absolute bottom-4 right-4 z-10 flex flex-wrap gap-2 bg-white/90 backdrop-blur p-2 rounded-xl shadow-lg border border-gray-200">
                     <button id="btnZoomIn" title="Inzoomen" class="p-2 hover:bg-gray-100 rounded-lg text-gray-700 font-bold transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     </button>
@@ -38,8 +38,14 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
                     </button>
                     <div class="w-px bg-gray-300 my-1"></div>
+                    <button id="btnRotateToggle" title="Stop/Start Rotatie" class="px-3 py-1 hover:bg-gray-100 rounded-lg text-xs font-semibold text-indigo-600 transition">
+                        ⏸️ Stop Rotatie
+                    </button>
+                    <button id="btnTopView" title="Bovenaanzicht" class="px-2 py-1 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition">
+                        Top
+                    </button>
                     <button id="btnReset" title="Reset Camera Positie" class="px-3 py-1 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition">
-                        Reset Weergave
+                        Reset
                     </button>
                 </div>
 
@@ -48,6 +54,41 @@
                     <div class="animate-spin inline-block w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mb-4"></div>
                     <h2 class="text-xl font-bold mb-1 text-gray-900">Model Genereren</h2>
                     <p id="statusText" class="text-gray-500 text-sm">GPX data ophalen en berekenen...</p>
+                </div>
+            </div>
+
+            <!-- Kleuren Paneel per Deel -->
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <h3 class="font-bold text-md text-gray-900 mb-4">🎨 Kleuren aanpassen voor visualisatie</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <label class="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+                        Sokkel
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="colorSokkel" value="#1a1a1a" class="w-10 h-10 rounded border cursor-pointer">
+                            <span class="text-gray-500 text-[11px]">Zwart / Basis</span>
+                        </div>
+                    </label>
+                    <label class="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+                        Landschap / Terrein
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="colorTerrein" value="#4ade80" class="w-10 h-10 rounded border cursor-pointer">
+                            <span class="text-gray-500 text-[11px]">Groen</span>
+                        </div>
+                    </label>
+                    <label class="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+                        Water
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="colorWater" value="#3b82f6" class="w-10 h-10 rounded border cursor-pointer">
+                            <span class="text-gray-500 text-[11px]">Blauw</span>
+                        </div>
+                    </label>
+                    <label class="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+                        Pad / Route
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="colorRoute" value="#ef4444" class="w-10 h-10 rounded border cursor-pointer">
+                            <span class="text-gray-500 text-[11px]">Rood</span>
+                        </div>
+                    </label>
                 </div>
             </div>
 
@@ -98,7 +139,6 @@
         renderer.setSize(width, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         
-        // --- SCHADUWEN ACTIEF MAKEN OP RENDERER ---
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
@@ -107,11 +147,19 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Omgevingslicht voor basiszichtbaarheid
+        // Automatische rotatie logica
+        let isAutoRotating = true;
+        let loadedModelGroup = null;
+
+        controls.addEventListener('start', () => {
+            // Als de gebruiker met de muis beweegt, pauzeer automatische rotatie tijdelijk
+            isAutoRotating = false;
+            updateRotateButtonText();
+        });
+
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
 
-        // Hoofdlicht dat schaduwen werpt en zorgt voor diepte op de bergen
         const mainLight = new THREE.DirectionalLight(0xffffff, 1.3);
         mainLight.position.set(150, 300, 150);
         mainLight.castShadow = true;
@@ -120,11 +168,11 @@
         mainLight.shadow.bias = -0.0001;
         scene.add(mainLight);
 
-        // Subtiel invullicht van de andere kant
         const fillLight = new THREE.DirectionalLight(0x90b0ff, 0.4);
         fillLight.position.set(-150, 100, -150);
         scene.add(fillLight);
 
+        // Knoppen event listeners
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             camera.position.lerp(controls.target, 0.15);
         });
@@ -133,7 +181,27 @@
             camera.position.lerp(controls.target, -0.15);
         });
 
+        const rotateToggleBtn = document.getElementById('btnRotateToggle');
+        rotateToggleBtn.addEventListener('click', () => {
+            isAutoRotating = !isAutoRotating;
+            updateRotateButtonText();
+        });
+
+        function updateRotateButtonText() {
+            rotateToggleBtn.innerText = isAutoRotating ? "⏸️ Stop Rotatie" : "▶️ Start Rotatie";
+        }
+
+        document.getElementById('btnTopView').addEventListener('click', () => {
+            isAutoRotating = false;
+            updateRotateButtonText();
+            camera.position.set(0, 350, 0.1);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        });
+
         document.getElementById('btnReset').addEventListener('click', () => {
+            isAutoRotating = true;
+            updateRotateButtonText();
             camera.position.copy(defaultCameraPosition);
             controls.target.set(0, 0, 0);
             controls.update();
@@ -149,10 +217,33 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            if (isAutoRotating && loadedModelGroup) {
+                loadedModelGroup.rotation.z += 0.005; // Langzaam om de as draaien
+            }
             controls.update();
             renderer.render(scene, camera);
         }
         animate();
+
+        // Materialen referenties voor dynamische kleurwissels
+        let matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.1 });
+        let matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, metalness: 0.05 });
+        let matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1 });
+        let matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.1 });
+
+        // Kleurpicker listeners
+        document.getElementById('colorSokkel').addEventListener('input', (e) => {
+            matSokkel.color.set(e.target.value);
+        });
+        document.getElementById('colorTerrein').addEventListener('input', (e) => {
+            matTerrein.color.set(e.target.value);
+        });
+        document.getElementById('colorWater').addEventListener('input', (e) => {
+            matWater.color.set(e.target.value);
+        });
+        document.getElementById('colorRoute').addEventListener('input', (e) => {
+            matRoute.color.set(e.target.value);
+        });
 
         const statusText = document.getElementById('statusText');
         const loadingOverlay = document.getElementById('loadingOverlay');
@@ -198,17 +289,11 @@
                 try {
                     const object = loader.parse(arrayBuffer);
                     
-                    const matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.1 });
-                    const matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, metalness: 0.05 });
-                    const matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1 });
-                    const matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.1 });
-
                     object.traverse(function (child) {
                         if (child.isMesh) {
                             child.castShadow = true;
                             child.receiveShadow = true;
                             
-                            // Bereken normals zodat licht en schaduw correct over het terrein vloeien
                             if (child.geometry) {
                                 child.geometry.computeVertexNormals();
                             }
@@ -231,7 +316,10 @@
                     object.position.sub(center);
                     object.rotation.x = -Math.PI / 2;
 
-                    scene.add(object);
+                    // Groeperen zodat we de hele groep kunnen laten roteren
+                    loadedModelGroup = new THREE.Group();
+                    loadedModelGroup.add(object);
+                    scene.add(loadedModelGroup);
                     
                     const size = box.getSize(new THREE.Vector3()).length();
                     defaultCameraPosition.set(0, size * 0.8, size * 0.8);
