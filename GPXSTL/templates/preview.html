@@ -42,7 +42,7 @@
                         Top
                     </button>
                     <button id="btnReset" title="Reset Camera Positie" class="px-3 py-1 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition">
-                        Reset Vieuw
+                        Reset View
                     </button>
                 </div>
 
@@ -128,14 +128,16 @@
 
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x111827); // Donkere, professionele slicer-achtergrond
+        scene.background = new THREE.Color(0x111827);
         
         let width = container.clientWidth;
         let height = container.clientHeight;
 
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 50000);
-        let defaultCameraPosition = new THREE.Vector3(0, 250, 250);
-        camera.position.copy(defaultCameraPosition);
+        
+        // Globale variabelen om de initiële reset-waarden op te slaan
+        let initialCameraPosition = new THREE.Vector3();
+        let initialTarget = new THREE.Vector3();
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
@@ -148,21 +150,19 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.zoomSpeed = 0.6; // Maakt het in- en uitzoomen met de muis rustiger en preciezer
         
-        // Slicer-achtige muisbesturing (Links = draaien, Rechts = pannen/verschuiven)
         controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
         };
 
-        // --- VIRTUEEL PRINTBED (Printplaat) ---
-        // Een duidelijk rooster dat de onderkant en het printbed voorstelt
+        // Virtueel printbed
         const gridHelper = new THREE.GridHelper(300, 30, 0x4f46e5, 0x374151);
-        gridHelper.position.y = -0.1; // Net onder de bodem van het model
+        gridHelper.position.y = -0.1;
         scene.add(gridHelper);
 
-        // Subtiel platform onder het rooster voor het 'slicer-gevoel'
         const bedGeometry = new THREE.PlaneGeometry(300, 300);
         const bedMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x1f2937, 
@@ -175,7 +175,6 @@
         printBed.receiveShadow = true;
         scene.add(printBed);
 
-        // Belichting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
@@ -191,7 +190,6 @@
         fillLight.position.set(-150, 100, -150);
         scene.add(fillLight);
 
-        // Knoppen event listeners
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             camera.position.lerp(controls.target, 0.15);
         });
@@ -201,16 +199,16 @@
         });
 
         document.getElementById('btnTopView').addEventListener('click', () => {
-            camera.position.set(0, 350, 0);
             camera.up.set(0, 0, -1);
-            controls.target.set(0, 0, 0);
+            camera.position.set(initialTarget.x, initialTarget.y + 350, initialTarget.z);
+            controls.target.copy(initialTarget);
             controls.update();
         });
 
         document.getElementById('btnReset').addEventListener('click', () => {
             camera.up.set(0, 1, 0);
-            camera.position.copy(defaultCameraPosition);
-            controls.target.set(0, 0, 0);
+            camera.position.copy(initialCameraPosition);
+            controls.target.copy(initialTarget);
             controls.update();
         });
 
@@ -229,7 +227,6 @@
         }
         animate();
 
-        // Materialen referenties voor dynamische kleurwissels
         let matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.1 });
         let matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, metalness: 0.05 });
         let matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1 });
@@ -314,22 +311,24 @@
                         }
                     });
 
-                    // Centreer het model netjes op het printbed (z=0 als onderkant)
                     const box = new THREE.Box3().setFromObject(object);
                     const center = box.getCenter(new THREE.Vector3());
                     object.position.sub(center);
                     object.rotation.x = -Math.PI / 2;
 
-                    // Verschuif de onderkant precies naar y = 0 zodat het mooi op het printbed rust
                     const newBox = new THREE.Box3().setFromObject(object);
                     object.position.y -= newBox.min.y;
 
                     scene.add(object);
                     
                     const size = box.getSize(new THREE.Vector3()).length();
-                    defaultCameraPosition.set(0, size * 0.8, size * 0.8);
-                    camera.position.copy(defaultCameraPosition);
-                    controls.target.set(0, newBox.max.y / 2, 0); // Richt op het midden van het model
+                    const targetY = newBox.max.y / 2;
+                    
+                    initialTarget.set(0, targetY, 0);
+                    initialCameraPosition.set(0, targetY + size * 0.8, size * 0.8);
+
+                    camera.position.copy(initialCameraPosition);
+                    controls.target.copy(initialTarget);
                     controls.update();
 
                     loadingOverlay.classList.add('hidden');
