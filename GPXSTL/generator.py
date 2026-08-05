@@ -5,52 +5,54 @@ import gpxpy
 import srtm
 import numpy as np
 import trimesh
-import gc  # Toegevoegd voor geheugenbeheer
+import gc  # Geheugenbeheer
 from dataclasses import dataclass
 from typing import Optional, Union
 from trimesh.creation import box
 from scipy.interpolate import splev, splprep
 from scipy.ndimage import gaussian_filter, gaussian_filter1d, map_coordinates, uniform_filter, label
-from matplotlib.path import Path  # Nodig voor het opvullen van meren en gesloten waterpolygonen
+from matplotlib.path import Path  # Voor het opvullen van meren
 
 # =====================================================================
 # CONFIGURATIE VOOR WEB & API
-# Alle instelbare parameters overzichtelijk bij elkaar.
 # =====================================================================
 @dataclass
 class GeneratorConfig:
-    grid_resolutie: int = 150       # Detail van het landschap (hoe hoger, hoe gedetailleerder maar trager)
-    marge_graden: float = 0.03      # Marge rondom de GPX route in GPS-coördinaten
-    route_breedte: float = 2.0      # Breedte van de wandel/fietsroute in mm op de print
-    route_dikte: float = 1.0        # Hoogte van de route bovenop het landschap in mm
-    z_schaal: float = 2.0           # Hoogte-overdrijving (bergen lijken steiler)
-    model_grootte: float = 100.0    # Totale fysieke grootte van de print (X/Y) in mm
-    bodem_dikte: float = 5.0        # Dikte van de bodem van het model zelf in mm
-    boord_marge: float = 10.0       # Hoe ver de zwarte sokkel uitsteekt rondom het model (mm)
-    boord_dikte: float = 5.0        # Hoe dik/diep de zwarte sokkel is in mm
-    water_diepte: float = 0.6       # Hoeveel mm rivieren verdiept worden in het landschap
-    min_water_grootte: int = 150    # Minimale grootte (aantal pixels) om waterruis te filteren
+    grid_resolutie: int = 150       # Detail van het landschap
+    marge_graden: float = 0.03      # Marge rondom de GPX route
+    route_breedte: float = 2.0      # Breedte van de route in mm
+    route_dikte: float = 1.0        # Hoogte van de route in mm
+    z_schaal: float = 2.0           # Hoogte-overdrijving bergen
+    model_grootte: float = 100.0    # Fysieke grootte (X/Y) in mm
+    bodem_dikte: float = 5.0        # Dikte van de bodem in mm
+    boord_marge: float = 10.0       # Zwarte sokkel uitsteek (mm)
+    boord_dikte: float = 5.0        # Dikte zwarte sokkel (mm)
+    water_diepte: float = 0.6       # Diepte van rivieren/meren in mm
+    min_water_grootte: int = 150    # Filter voor overbodige kleine riviertjes/ruis
 
 
 def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
-    """Haalt rivieren en meren op via OpenStreetMap API's."""
-    print("Ophalen van OSM waterdata...")
+    """Haalt gericht grote rivieren en meren op via OpenStreetMap API's (geen kleine sloten)."""
+    print("Ophalen van gerichte OSM waterdata (meren & rivieren)...")
     overpass_urls = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
     ]
     
+    # Gerichte query: alleen echte rivieren en stilstaand water (geen kleine beekjes/sloten)
     overpass_query = f"""
     [out:json][timeout:30];
     (
       way["waterway"="river"]({min_lat},{min_lon},{max_lat},{max_lon});
       way["natural"="water"]({min_lat},{min_lon},{max_lat},{max_lon});
       relation["natural"="water"]({min_lat},{min_lon},{max_lat},{max_lon});
+      way["water"]({min_lat},{min_lon},{max_lat},{max_lon});
+      way["landuse"="reservoir"]({min_lat},{min_lon},{max_lat},{max_lon});
     );
     out geom;
     """
-    headers = {'User-Agent': 'GPX3MF-WebGenerator/8.0'}
+    headers = {'User-Agent': 'GPX3MF-WebGenerator/9.0'}
 
     for url in overpass_urls:
         try:
@@ -68,7 +70,7 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
                     if geom_len > 1:
                         result.append(np.array(segments[idx:idx+geom_len]))
                         idx += geom_len
-                print(f"Succes: {len(result)} waterwegen gevonden.")
+                print(f"Succes: {len(result)} waterobjecten gevonden.")
                 
                 del data
                 del segments
@@ -116,7 +118,7 @@ def draw_line_on_grid(ii0, ji0, ii1, ji1, grid_shape):
     return points
 
 # =====================================================================
-# HOOFDFUNCTIE (GEOPTIMALISEERD VOOR WEB)
+# HOOFDFUNCTIE
 # =====================================================================
 def generate_terrain_and_route(
     gpx_input: Union[str, bytes],  
@@ -155,11 +157,11 @@ def generate_terrain_and_route(
 
     grid_z_echt = np.array([[elevation_data.get_elevation(lat, lon) or np.nan for lon in lons] for lat in lats])
     
-    # 1. DETECTEER DE ZEE EERST OP BASIS VAN NAN WAARDEN (VOORDAT FILL_ALL_NANS DRAAIT)
+    # 1. Detecteer zee op basis van lege SRTM data (NaN)
     initial_sea = np.isnan(grid_z_echt) | (grid_z_echt <= -500.0)
     sea_mask = filter_small_water_noise(initial_sea, min_size=config.min_water_grootte)
 
-    # 2. VUL DAARNA PAS DE REST OP VOOR HET TERREIN
+    # 2. Vul landgaten op
     grid_z_echt = fill_all_nans(grid_z_echt)
     
     water_mask = sea_mask.copy()
@@ -188,7 +190,7 @@ def generate_terrain_and_route(
                     mask = path.contains_points(grid_points).reshape((config.grid_resolutie, config.grid_resolutie))
                     lake_mask[mask] = True
                 except Exception as e:
-                    print(f"Fout bij invullen water polygoon: {e}")
+                    print(f"Fout bij invullen meer polygoon: {e}")
             else:
                 for k in range(len(seg) - 1):
                     ji0, ii0 = int(round((seg[k][0] - min_lon) / lon_step)), int(round((seg[k][1] - min_lat) / lat_step))
@@ -199,7 +201,12 @@ def generate_terrain_and_route(
         del osm_segments
         gc.collect()
 
-    lake_mask = filter_small_water_noise(lake_mask, min_size=max(5, config.min_water_grootte // 10))
+    # MEREN KRIJGEN EEN ZEER LAGE DRIJFVERVALLING (Zodat ze nagenoeg altijd aanstaan en niet weggefilterd worden)
+    lake_mask = filter_small_water_noise(lake_mask, min_size=10) 
+    # RIVIEREN GEBRUIKEN DE GEBRUIKERSFILTER (min_water_grootte)
+    if config.min_water_grootte > 0:
+        river_mask = filter_small_water_noise(river_mask, min_size=config.min_water_grootte)
+
     water_mask = sea_mask | lake_mask | river_mask
 
     grid_z_smoothed = gaussian_filter(grid_z_echt, sigma=1.0)
@@ -215,14 +222,13 @@ def generate_terrain_and_route(
     xx, yy = np.meshgrid(x_geschaald, y_geschaald)
     z_off = config.boord_dikte 
     
-    # Minimale waterdiepte waarborgen om open gaten in de 3D-print te voorkomen
     eff_water_depth = max(config.water_diepte, 0.4) if (np.any(river_mask) or np.any(lake_mask)) else config.water_diepte
 
     Z_terrein_top = z_geschaald.copy() + config.bodem_dikte + z_off
     Z_terrein_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte - eff_water_depth + z_off
     Z_terrein_top[sea_mask] = config.bodem_dikte + z_off
 
-    # Meren voorzien van een volledig vlakke (horizontale) waterspiegel
+    # 100% VLAKKE HORIZONTALE WATERPIEGEL VOOR ELK MEER APART
     labeled_lakes, num_lakes = label(lake_mask)
     for l_idx in range(1, num_lakes + 1):
         l_comp = (labeled_lakes == l_idx)
@@ -261,7 +267,6 @@ def generate_terrain_and_route(
     t_f_top = np.vstack((np.column_stack((p1.ravel(), p2.ravel(), p3.ravel())), np.column_stack((p2.ravel(), p4.ravel(), p3.ravel()))))
     t_f_bot = np.vstack((np.column_stack((b1.ravel(), b3.ravel(), b2.ravel())), np.column_stack((b2.ravel(), b3.ravel(), b4.ravel()))))
 
-    # Strakkere drempelwaarde om rand-gaten te voorkomen
     w_thick_mask = (Z_water_top - Z_water_bot) > 0.001
     w_active = w_thick_mask[:-1, :-1] | w_thick_mask[1:, :-1] | w_thick_mask[:-1, 1:] | w_thick_mask[1:, 1:]
 
