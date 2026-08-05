@@ -28,7 +28,6 @@ class GeneratorConfig:
     bodem_dikte: float = 5.0        # Dikte van de bodem van het model zelf in mm
     boord_marge: float = 10.0       # Hoe ver de zwarte sokkel uitsteekt rondom het model (mm)
     boord_dikte: float = 5.0        # Hoe dik/diep de zwarte sokkel is in mm
-    # Nieuwe parameters voor wateraanpassing:
     water_diepte: float = 0.6       # Hoeveel mm rivieren verdiept worden in het landschap
     min_water_grootte: int = 150    # Minimale grootte (aantal pixels) om waterruis te filteren
 
@@ -62,7 +61,6 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
                             for geom in [el.get('geometry', el.get('coords', []))] if geom and len(geom) > 1 
                             for pt in geom]
                 
-                # Hergroepeer tot lijst van arrays
                 result = []
                 idx = 0
                 for el in data.get('elements', []):
@@ -72,11 +70,9 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
                         idx += geom_len
                 print(f"Succes: {len(result)} waterwegen gevonden.")
                 
-                # --- GEHEUGEN OPRUIMEN ---
                 del data
                 del segments
                 gc.collect()
-                # -------------------------
 
                 return result
         except Exception:
@@ -158,24 +154,27 @@ def generate_terrain_and_route(
     lats = np.linspace(min_lat, max_lat, config.grid_resolutie)
 
     grid_z_echt = np.array([[elevation_data.get_elevation(lat, lon) or np.nan for lon in lons] for lat in lats])
+    
+    # 1. DETECTEER DE ZEE EERST OP BASIS VAN NAN WAARDEN (VOORDAT FILL_ALL_NANS DRAAIT)
+    initial_sea = np.isnan(grid_z_echt) | (grid_z_echt <= -500.0)
+    sea_mask = filter_small_water_noise(initial_sea, min_size=config.min_water_grootte)
+
+    # 2. VUL DAARNA PAS DE REST OP VOOR HET TERREIN
     grid_z_echt = fill_all_nans(grid_z_echt)
     
-    # Water detectie met instelbare filtergrootte
-    sea_mask = filter_small_water_noise((grid_z_echt <= 0.5), min_size=config.min_water_grootte)
     water_mask = sea_mask.copy()
     river_mask = np.zeros_like(water_mask, dtype=bool)
+    lake_mask = np.zeros_like(water_mask, dtype=bool)
 
     osm_segments = fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon)
     if osm_segments:
         lon_step = (max_lon - min_lon) / (config.grid_resolutie - 1)
         lat_step = (max_lat - min_lat) / (config.grid_resolutie - 1)
         
-        # Rooster coördinaten voor het opvullen van gesloten waterpolygonen (meren/vijvers)
         grid_c, grid_r = np.meshgrid(np.arange(config.grid_resolutie), np.arange(config.grid_resolutie))
         grid_points = np.column_stack((grid_c.ravel(), grid_r.ravel()))
 
         for seg in osm_segments:
-            # Check of het watersegment een gesloten lus vormt (meer/vijver)
             is_closed = len(seg) > 3 and np.allclose(seg[0], seg[-1], atol=1e-4)
 
             if is_closed:
@@ -187,22 +186,21 @@ def generate_terrain_and_route(
                 try:
                     path = Path(polygon_pixels)
                     mask = path.contains_points(grid_points).reshape((config.grid_resolutie, config.grid_resolutie))
-                    water_mask[mask] = True
-                    if not np.any(sea_mask[mask]):
-                        river_mask[mask] = True
+                    lake_mask[mask] = True
                 except Exception as e:
                     print(f"Fout bij invullen water polygoon: {e}")
             else:
-                # Open rivierlijnen tekenen zoals voorheen
                 for k in range(len(seg) - 1):
                     ji0, ii0 = int(round((seg[k][0] - min_lon) / lon_step)), int(round((seg[k][1] - min_lat) / lat_step))
                     ji1, ii1 = int(round((seg[k+1][0] - min_lon) / lon_step)), int(round((seg[k+1][1] - min_lat) / lat_step))
                     for r, c in draw_line_on_grid(ii0, ji0, ii1, ji1, (config.grid_resolutie, config.grid_resolutie)):
-                        water_mask[r, c] = True
-                        if not sea_mask[r, c]: river_mask[r, c] = True
+                        river_mask[r, c] = True
         
         del osm_segments
         gc.collect()
+
+    lake_mask = filter_small_water_noise(lake_mask, min_size=max(5, config.min_water_grootte // 10))
+    water_mask = sea_mask | lake_mask | river_mask
 
     grid_z_smoothed = gaussian_filter(grid_z_echt, sigma=1.0)
 
@@ -217,15 +215,37 @@ def generate_terrain_and_route(
     xx, yy = np.meshgrid(x_geschaald, y_geschaald)
     z_off = config.boord_dikte 
     
+    # Minimale waterdiepte waarborgen om open gaten in de 3D-print te voorkomen
+    eff_water_depth = max(config.water_diepte, 0.4) if (np.any(river_mask) or np.any(lake_mask)) else config.water_diepte
+
     Z_terrein_top = z_geschaald.copy() + config.bodem_dikte + z_off
-    Z_terrein_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte - config.water_diepte + z_off
+    Z_terrein_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte - eff_water_depth + z_off
     Z_terrein_top[sea_mask] = config.bodem_dikte + z_off
+
+    # Meren voorzien van een volledig vlakke (horizontale) waterspiegel
+    labeled_lakes, num_lakes = label(lake_mask)
+    for l_idx in range(1, num_lakes + 1):
+        l_comp = (labeled_lakes == l_idx)
+        if not np.any(l_comp):
+            continue
+        lake_surface_z = np.min(z_geschaald[l_comp])
+        Z_terrein_top[l_comp] = lake_surface_z + config.bodem_dikte - eff_water_depth + z_off
+
     Z_terrein_bot = np.full_like(Z_terrein_top, z_off)
     
     Z_water_bot = Z_terrein_top.copy()
     Z_water_top = Z_water_bot.copy()
+    
     Z_water_top[sea_mask] = flat_sea_z + config.bodem_dikte + z_off
     Z_water_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte + z_off
+
+    for l_idx in range(1, num_lakes + 1):
+        l_comp = (labeled_lakes == l_idx)
+        if not np.any(l_comp):
+            continue
+        lake_surface_z = np.min(z_geschaald[l_comp])
+        Z_water_top[l_comp] = lake_surface_z + config.bodem_dikte + z_off
+
     Z_water_top = np.maximum(Z_water_top, Z_water_bot)
 
     r = config.grid_resolutie
@@ -241,7 +261,8 @@ def generate_terrain_and_route(
     t_f_top = np.vstack((np.column_stack((p1.ravel(), p2.ravel(), p3.ravel())), np.column_stack((p2.ravel(), p4.ravel(), p3.ravel()))))
     t_f_bot = np.vstack((np.column_stack((b1.ravel(), b3.ravel(), b2.ravel())), np.column_stack((b2.ravel(), b3.ravel(), b4.ravel()))))
 
-    w_thick_mask = (Z_water_top - Z_water_bot) > 0.01
+    # Strakkere drempelwaarde om rand-gaten te voorkomen
+    w_thick_mask = (Z_water_top - Z_water_bot) > 0.001
     w_active = w_thick_mask[:-1, :-1] | w_thick_mask[1:, :-1] | w_thick_mask[:-1, 1:] | w_thick_mask[1:, 1:]
 
     t_f_sides, w_f_top, w_f_bot, w_f_sides = [], [], [], []
