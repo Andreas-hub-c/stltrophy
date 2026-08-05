@@ -147,12 +147,10 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Automatische rotatie logica
         let isAutoRotating = true;
         let loadedModelGroup = null;
 
         controls.addEventListener('start', () => {
-            // Als de gebruiker met de muis beweegt, pauzeer automatische rotatie tijdelijk
             isAutoRotating = false;
             updateRotateButtonText();
         });
@@ -172,7 +170,6 @@
         fillLight.position.set(-150, 100, -150);
         scene.add(fillLight);
 
-        // Knoppen event listeners
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             camera.position.lerp(controls.target, 0.15);
         });
@@ -191,10 +188,13 @@
             rotateToggleBtn.innerText = isAutoRotating ? "⏸️ Stop Rotatie" : "▶️ Start Rotatie";
         }
 
+        // --- GECORRIGEERDE TOP-VIEW FUNCTIE ---
         document.getElementById('btnTopView').addEventListener('click', () => {
             isAutoRotating = false;
             updateRotateButtonText();
-            camera.position.set(0, 350, 0.1);
+            // Plaats de camera recht van boven op de Y-as ten opzichte van het model
+            camera.position.set(0, 350, 0);
+            camera.up.set(0, 0, -1); // Zorg dat de bovenkant correct is georiënteerd
             controls.target.set(0, 0, 0);
             controls.update();
         });
@@ -202,6 +202,7 @@
         document.getElementById('btnReset').addEventListener('click', () => {
             isAutoRotating = true;
             updateRotateButtonText();
+            camera.up.set(0, 1, 0); // Reset camera op-vector naar standaard
             camera.position.copy(defaultCameraPosition);
             controls.target.set(0, 0, 0);
             controls.update();
@@ -218,20 +219,19 @@
         function animate() {
             requestAnimationFrame(animate);
             if (isAutoRotating && loadedModelGroup) {
-                loadedModelGroup.rotation.z += 0.005; // Langzaam om de as draaien
+                // --- GECORRIGEERDE ROTATIE OM EIGEN AS (Y-as in Three.js na rotatie) ---
+                loadedModelGroup.rotation.y += 0.005; 
             }
             controls.update();
             renderer.render(scene, camera);
         }
         animate();
 
-        // Materialen referenties voor dynamische kleurwissels
         let matSokkel = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.1 });
         let matTerrein = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, metalness: 0.05 });
         let matWater = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1 });
         let matRoute = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4, metalness: 0.1 });
 
-        // Kleurpicker listeners
         document.getElementById('colorSokkel').addEventListener('input', (e) => {
             matSokkel.color.set(e.target.value);
         });
@@ -316,7 +316,6 @@
                     object.position.sub(center);
                     object.rotation.x = -Math.PI / 2;
 
-                    // Groeperen zodat we de hele groep kunnen laten roteren
                     loadedModelGroup = new THREE.Group();
                     loadedModelGroup.add(object);
                     scene.add(loadedModelGroup);
