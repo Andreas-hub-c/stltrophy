@@ -135,13 +135,13 @@
 
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 50000);
         
-        // Globale variabelen om de initiële reset-waarden op te slaan
         let initialCameraPosition = new THREE.Vector3();
         let initialTarget = new THREE.Vector3();
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(width, height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.domElement.style.touchAction = 'none'; // Zorgt dat het muiswiel feilloos wordt opgevangen
         
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -150,7 +150,8 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.zoomSpeed = 0.6; // Maakt het in- en uitzoomen met de muis rustiger en preciezer
+        controls.enableZoom = true;
+        controls.zoomSpeed = 1.0;
         
         controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
