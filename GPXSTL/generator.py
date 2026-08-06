@@ -32,7 +32,7 @@ class GeneratorConfig:
 
 
 def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
-    """Haalt gericht grote rivieren en meren op via OpenStreetMap API's (geen kleine sloten)."""
+    """Haalt gericht grote rivieren en meren op via OpenStreetMap API's."""
     print("Ophalen van gerichte OSM waterdata (meren & rivieren)...")
     overpass_urls = [
         "https://overpass-api.de/api/interpreter",
@@ -40,7 +40,6 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
     ]
     
-    # Gerichte query: alleen echte rivieren en stilstaand water (geen kleine beekjes/sloten)
     overpass_query = f"""
     [out:json][timeout:30];
     (
@@ -48,37 +47,40 @@ def fetch_osm_waterways(min_lat, min_lon, max_lat, max_lon):
       way["natural"="water"]({min_lat},{min_lon},{max_lat},{max_lon});
       relation["natural"="water"]({min_lat},{min_lon},{max_lat},{max_lon});
       way["water"]({min_lat},{min_lon},{max_lat},{max_lon});
+      relation["water"]({min_lat},{min_lon},{max_lat},{max_lon});
       way["landuse"="reservoir"]({min_lat},{min_lon},{max_lat},{max_lon});
     );
     out geom;
     """
-    headers = {'User-Agent': 'GPX3MF-WebGenerator/9.0'}
+    headers = {'User-Agent': 'GPX3MF-WebGenerator/9.13'}
 
     for url in overpass_urls:
         try:
             response = requests.post(url, data={'data': overpass_query}, headers=headers, timeout=40)
             if response.status_code == 200:
                 data = response.json()
-                segments = [[pt['lon'], pt['lat']] for el in data.get('elements', []) 
-                            for geom in [el.get('geometry', el.get('coords', []))] if geom and len(geom) > 1 
-                            for pt in geom]
+                elements = data.get('elements', [])
                 
                 result = []
-                idx = 0
-                for el in data.get('elements', []):
-                    geom_len = len(el.get('geometry', el.get('coords', [])))
-                    if geom_len > 1:
-                        result.append(np.array(segments[idx:idx+geom_len]))
-                        idx += geom_len
-                print(f"Succes: {len(result)} waterobjecten gevonden.")
-                
-                del data
-                del segments
-                gc.collect()
+                for el in elements:
+                    geom = el.get('geometry', el.get('coords', []))
+                    if not geom and 'members' in el:
+                        for member in el.get('members', []):
+                            if 'geometry' in member:
+                                pts = [[pt['lon'], pt['lat']] for pt in member['geometry']]
+                                if len(pts) > 1:
+                                    result.append(np.array(pts))
+                    elif geom and len(geom) > 1:
+                        pts = [[pt['lon'], pt['lat']] for pt in geom]
+                        result.append(np.array(pts))
 
+                print(f"Succes: {len(result)} waterobjecten gevonden.")
+                del data
+                gc.collect()
                 return result
         except Exception:
             continue
+            
     print("Waarschuwing: Kon geen waterdata ophalen.")
     return []
 
@@ -105,6 +107,40 @@ def filter_small_water_noise(water_mask, min_size=150):
             cleaned_mask |= component
     return cleaned_mask
 
+def get_true_sea_mask(initial_sea, min_size=150):
+    """Zorgt ervoor dat ALLEEN de echte open zee wordt gedetecteerd aan de randen van de kaart."""
+    labeled_array, num_features = label(initial_sea)
+    if num_features == 0:
+        return initial_sea
+        
+    h, w = initial_sea.shape
+    true_sea = np.zeros_like(initial_sea, dtype=bool)
+    
+    for i in range(1, num_features + 1):
+        component = (labeled_array == i)
+        if np.sum(component) < min_size:
+            continue
+            
+        touches_border = (
+            np.any(component[0, :]) or 
+            np.any(component[-1, :]) or 
+            np.any(component[:, 0]) or 
+            np.any(component[:, -1])
+        )
+        
+        if touches_border:
+            border_span = (
+                np.sum(component[0, :]) + 
+                np.sum(component[-1, :]) + 
+                np.sum(component[:, 0]) + 
+                np.sum(component[:, -1])
+            )
+            max_dim = max(h, w)
+            if border_span > (0.06 * max_dim) or np.sum(component) > (0.10 * h * w):
+                true_sea |= component
+                
+    return true_sea
+
 def draw_line_on_grid(ii0, ji0, ii1, ji1, grid_shape):
     points = []
     n = max(abs(ii1 - ii0), abs(ji1 - ji0))
@@ -129,7 +165,7 @@ def generate_terrain_and_route(
 
     try:
         if isinstance(gpx_input, str) and (gpx_input.endswith('.gpx') or gpx_input.endswith('.xml')):
-            with open(gpx_input, "r") as f:
+            with open(gpx_input, "r", encoding="utf-8", errors="ignore") as f:
                 gpx = gpxpy.parse(f)
         else:
             gpx = gpxpy.parse(gpx_input)
@@ -157,11 +193,9 @@ def generate_terrain_and_route(
 
     grid_z_echt = np.array([[elevation_data.get_elevation(lat, lon) or np.nan for lon in lons] for lat in lats])
     
-    # 1. Detecteer zee op basis van lege SRTM data (NaN)
     initial_sea = np.isnan(grid_z_echt) | (grid_z_echt <= -500.0)
-    sea_mask = filter_small_water_noise(initial_sea, min_size=config.min_water_grootte)
+    sea_mask = get_true_sea_mask(initial_sea, min_size=config.min_water_grootte)
 
-    # 2. Vul landgaten op
     grid_z_echt = fill_all_nans(grid_z_echt)
     
     water_mask = sea_mask.copy()
@@ -177,20 +211,21 @@ def generate_terrain_and_route(
         grid_points = np.column_stack((grid_c.ravel(), grid_r.ravel()))
 
         for seg in osm_segments:
-            is_closed = len(seg) > 3 and np.allclose(seg[0], seg[-1], atol=1e-4)
+            is_closed = len(seg) > 3 and np.allclose(seg[0], seg[-1], atol=1e-3)
 
-            if is_closed:
-                polygon_pixels = []
-                for pt in seg:
-                    c = (pt[0] - min_lon) / lon_step
-                    r = (pt[1] - min_lat) / lat_step
-                    polygon_pixels.append([c, r])
+            polygon_pixels = []
+            for pt in seg:
+                c = (pt[0] - min_lon) / lon_step
+                r = (pt[1] - min_lat) / lat_step
+                polygon_pixels.append([c, r])
+
+            if is_closed and len(polygon_pixels) > 3:
                 try:
                     path = Path(polygon_pixels)
                     mask = path.contains_points(grid_points).reshape((config.grid_resolutie, config.grid_resolutie))
                     lake_mask[mask] = True
-                except Exception as e:
-                    print(f"Fout bij invullen meer polygoon: {e}")
+                except Exception:
+                    pass
             else:
                 for k in range(len(seg) - 1):
                     ji0, ii0 = int(round((seg[k][0] - min_lon) / lon_step)), int(round((seg[k][1] - min_lat) / lat_step))
@@ -201,9 +236,8 @@ def generate_terrain_and_route(
         del osm_segments
         gc.collect()
 
-    # MEREN KRIJGEN EEN ZEER LAGE DRIJFVERVALLING (Zodat ze nagenoeg altijd aanstaan en niet weggefilterd worden)
     lake_mask = filter_small_water_noise(lake_mask, min_size=10) 
-    # RIVIEREN GEBRUIKEN DE GEBRUIKERSFILTER (min_water_grootte)
+    
     if config.min_water_grootte > 0:
         river_mask = filter_small_water_noise(river_mask, min_size=config.min_water_grootte)
 
@@ -228,14 +262,20 @@ def generate_terrain_and_route(
     Z_terrein_top[river_mask] = z_geschaald[river_mask] + config.bodem_dikte - eff_water_depth + z_off
     Z_terrein_top[sea_mask] = config.bodem_dikte + z_off
 
-    # 100% VLAKKE HORIZONTALE WATERPIEGEL VOOR ELK MEER APART
     labeled_lakes, num_lakes = label(lake_mask)
     for l_idx in range(1, num_lakes + 1):
         l_comp = (labeled_lakes == l_idx)
         if not np.any(l_comp):
             continue
-        lake_surface_z = np.min(z_geschaald[l_comp])
-        Z_terrein_top[l_comp] = lake_surface_z + config.bodem_dikte - eff_water_depth + z_off
+        
+        lake_surface_z = np.mean(z_geschaald[l_comp])
+        target_water_bed = lake_surface_z - eff_water_depth
+        Z_terrein_top[l_comp] = target_water_bed + config.bodem_dikte + z_off
+        
+        from scipy.ndimage import binary_dilation
+        border_zone = binary_dilation(l_comp, iterations=2) & ~l_comp
+        if np.any(border_zone):
+            Z_terrein_top[border_zone] = 0.5 * Z_terrein_top[border_zone] + 0.5 * (target_water_bed + config.bodem_dikte + z_off)
 
     Z_terrein_bot = np.full_like(Z_terrein_top, z_off)
     
@@ -249,7 +289,7 @@ def generate_terrain_and_route(
         l_comp = (labeled_lakes == l_idx)
         if not np.any(l_comp):
             continue
-        lake_surface_z = np.min(z_geschaald[l_comp])
+        lake_surface_z = np.mean(z_geschaald[l_comp])
         Z_water_top[l_comp] = lake_surface_z + config.bodem_dikte + z_off
 
     Z_water_top = np.maximum(Z_water_top, Z_water_bot)
@@ -284,19 +324,29 @@ def generate_terrain_and_route(
             if w_active[i, j]:
                 w_f_top.extend([[cur_p1, cur_p2, cur_p3], [cur_p2, cur_p4, cur_p3]])
                 w_f_bot.extend([[cur_b1, cur_b3, cur_b2], [cur_b2, cur_b3, cur_b4]])
-                if i == 0 or not w_active[i-1, j]: w_f_sides.extend([[cur_p1, cur_b1, cur_p2], [cur_p2, cur_b1, cur_b2]])
-                if i == r - 2 or not w_active[i+1, j]: w_f_sides.extend([[cur_p3, cur_p4, cur_b3], [cur_p4, cur_b4, cur_b3]])
-                if j == 0 or not w_active[i, j-1]: w_f_sides.extend([[cur_p1, cur_p3, cur_b3], [cur_p1, cur_b3, cur_b1]])
-                if j == r - 2 or not w_active[i, j+1]: w_f_sides.extend([[cur_p2, cur_b4, cur_p4], [cur_p2, cur_b2, cur_b4]])
+                
+                has_top = (i > 0) and w_active[i-1, j]
+                has_bottom = (i < r - 2) and w_active[i+1, j]
+                has_left = (j > 0) and w_active[i, j-1]
+                has_right = (j < r - 2) and w_active[i, j+1]
+
+                if not has_top: w_f_sides.extend([[cur_p1, cur_b1, cur_p2], [cur_p2, cur_b1, cur_b2]])
+                if not has_bottom: w_f_sides.extend([[cur_p3, cur_p4, cur_b3], [cur_p4, cur_b4, cur_b3]])
+                if not has_left: w_f_sides.extend([[cur_p1, cur_p3, cur_b3], [cur_p1, cur_b3, cur_b1]])
+                if not has_right: w_f_sides.extend([[cur_p2, cur_b4, cur_p4], [cur_p2, cur_b2, cur_b4]])
 
     terrain_mesh = trimesh.Trimesh(vertices=t_verts, faces=np.vstack((t_f_top, t_f_bot, np.array(t_f_sides))), process=True)
     trimesh.repair.fix_normals(terrain_mesh)
 
+    # --- WATER MESH OPSCHONEN (MET FIX_NORMALS IN PLAATS VAN UNIFY_NORMALS) ---
     water_mesh = trimesh.Trimesh()
     if w_f_top:
         water_mesh = trimesh.Trimesh(vertices=w_verts, faces=np.vstack((w_f_top, w_f_bot, w_f_sides)), process=True)
         water_mesh.remove_unreferenced_vertices()
-        trimesh.repair.fix_normals(water_mesh)
+        water_mesh.merge_vertices()
+        water_mesh.update_faces(water_mesh.nondegenerate_faces())
+        water_mesh.fix_normals()  # Aangepast voor moderne trimesh versies
+        trimesh.repair.fill_holes(water_mesh)
 
     gx_idx = np.clip((route_coords[:, 0] - min_lon) / (max_lon - min_lon), 0.0, 1.0) * (r - 1)
     gy_idx = np.clip((route_coords[:, 1] - min_lat) / (max_lat - min_lat), 0.0, 1.0) * (r - 1)
@@ -347,9 +397,19 @@ def generate_terrain_and_route(
     boord_mesh.visual.face_colors = [30, 30, 30, 255]      
     terrain_mesh.visual.face_colors = [120, 200, 120, 255] 
     route_trimesh.visual.face_colors = [255, 0, 0, 255]    
-    if not water_mesh.is_empty: water_mesh.visual.face_colors = [50, 100, 255, 255] 
+    if not water_mesh.is_empty: 
+        water_mesh.visual.face_colors = [50, 100, 255, 255]
 
-    scene = trimesh.Scene({'1_Zwarte_Sokkel': boord_mesh, '2_Terrein': terrain_mesh, '3_Water': water_mesh, '4_Route': route_trimesh})
+    for m in [boord_mesh, terrain_mesh, route_trimesh]:
+        trimesh.repair.fix_normals(m)
+        trimesh.repair.fill_holes(m)
+
+    scene = trimesh.Scene({
+        '1_Zwarte_Sokkel': boord_mesh, 
+        '2_Terrein': terrain_mesh, 
+        '3_Water': water_mesh, 
+        '4_Route': route_trimesh
+    })
     
     if not output_filename:
         return scene.export(file_type='3mf')
